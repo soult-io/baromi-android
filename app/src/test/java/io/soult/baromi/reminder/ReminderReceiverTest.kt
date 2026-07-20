@@ -22,9 +22,12 @@ class ReminderReceiverTest {
     @Before
     fun setup() {
         app = ApplicationProvider.getApplicationContext()
-        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        shadowOf(app).grantPermissions(
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.SCHEDULE_EXACT_ALARM,
+            Manifest.permission.USE_EXACT_ALARM,
+        )
         alarmManager = app.getSystemService(AlarmManager::class.java)
-        shadowOf(alarmManager).setCanScheduleExactAlarms(true)
     }
 
     @Test

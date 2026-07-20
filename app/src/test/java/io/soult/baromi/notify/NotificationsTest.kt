@@ -32,7 +32,7 @@ class NotificationsTest {
 
         assertNotNull(
             "reminder channel must exist",
-            shadowOf(nm).getNotificationChannel(Notifications.CHANNEL_ID),
+            nm.getNotificationChannel(Notifications.CHANNEL_ID),
         )
         assertEquals(1, shadowOf(nm).size())
     }

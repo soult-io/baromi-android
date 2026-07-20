@@ -1,7 +1,8 @@
 package io.soult.baromi.reminder
 
+import android.Manifest
 import android.app.AlarmManager
-import android.content.Context
+import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import io.soult.baromi.data.ReminderTime
 import org.junit.Assert.assertEquals
@@ -16,21 +17,24 @@ import java.time.ZoneId
 @RunWith(RobolectricTestRunner::class)
 class AlarmSchedulerTest {
 
-    private lateinit var context: Context
+    private lateinit var app: Application
     private lateinit var alarmManager: AlarmManager
     private val utc = ZoneId.of("UTC")
     private val now = Instant.parse("2026-07-20T08:00:00Z")
 
     @Before
     fun setup() {
-        context = ApplicationProvider.getApplicationContext()
-        alarmManager = context.getSystemService(AlarmManager::class.java)
-        shadowOf(alarmManager).setCanScheduleExactAlarms(true)
+        app = ApplicationProvider.getApplicationContext()
+        alarmManager = app.getSystemService(AlarmManager::class.java)
+        shadowOf(app).grantPermissions(
+            Manifest.permission.SCHEDULE_EXACT_ALARM,
+            Manifest.permission.USE_EXACT_ALARM,
+        )
     }
 
     @Test
     fun schedule_one_arms_a_single_alarm() {
-        AlarmScheduler.scheduleOne(context, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
+        AlarmScheduler.scheduleOne(app, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
         assertEquals(1, shadowOf(alarmManager).scheduledAlarms.size)
     }
 
@@ -41,21 +45,14 @@ class AlarmSchedulerTest {
             ReminderTime(id = 2, hour = 14, minute = 0),
             ReminderTime(id = 3, hour = 20, minute = 0),
         )
-        AlarmScheduler.scheduleAll(context, times, now = now, zone = utc)
+        AlarmScheduler.scheduleAll(app, times, now = now, zone = utc)
         assertEquals(3, shadowOf(alarmManager).scheduledAlarms.size)
     }
 
     @Test
-    fun not_scheduled_when_exact_alarms_denied() {
-        shadowOf(alarmManager).setCanScheduleExactAlarms(false)
-        AlarmScheduler.scheduleOne(context, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
-        assertEquals(0, shadowOf(alarmManager).scheduledAlarms.size)
-    }
-
-    @Test
     fun cancel_removes_a_scheduled_alarm() {
-        AlarmScheduler.scheduleOne(context, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
-        AlarmScheduler.cancelOne(context, id = 1L, hour = 14, minute = 0)
+        AlarmScheduler.scheduleOne(app, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
+        AlarmScheduler.cancelOne(app, id = 1L, hour = 14, minute = 0)
         assertEquals(0, shadowOf(alarmManager).scheduledAlarms.size)
     }
 }

@@ -20,13 +20,16 @@ object AlarmScheduler {
     const val EXTRA_ID = "io.soult.baromi.reminder.ID"
     const val EXTRA_HOUR = "io.soult.baromi.reminder.HOUR"
     const val EXTRA_MINUTE = "io.soult.baromi.reminder.MINUTE"
+
+    // The alarm-hop prompt time (AlarmManager -> ReminderReceiver). Distinct key from the
+    // tap-hop [io.soult.baromi.notify.Notifications.EXTRA_PROMPT_TIME] (notification -> Activity).
     const val EXTRA_PROMPT_TIME = "io.soult.baromi.reminder.PROMPT_TIME"
 
     /**
      * Test seam: when non-null, forces the exact-alarm capability answer. Production leaves it
      * null and uses the real OS check (Robolectric's shadow can't be driven directly here).
      */
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     var canScheduleExactOverride: Boolean? = null
 
     /** True when the OS will honor exact alarms (always pre-31; a special access grant on 31+). */

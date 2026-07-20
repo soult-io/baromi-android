@@ -3,8 +3,6 @@ package io.soult.baromi.reminder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import io.soult.baromi.data.BaromiDatabase
-import io.soult.baromi.data.ReminderRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,9 +26,7 @@ class BootReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val repo = ReminderRepository(BaromiDatabase.getInstance(appContext).reminderTimeDao())
-                repo.seedDefaultsIfEmpty()
-                AlarmScheduler.scheduleAll(appContext, repo.all())
+                rearmAllReminders(appContext)
             } finally {
                 pending.finish()
             }

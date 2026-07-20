@@ -1,10 +1,14 @@
 package io.soult.baromi.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** A configured daily reminder time (local wall-clock hour:minute). */
-@Entity(tableName = "reminder_time")
+/** A configured daily reminder time (local wall-clock hour:minute). Times are unique. */
+@Entity(
+    tableName = "reminder_time",
+    indices = [Index(value = ["hour", "minute"], unique = true)],
+)
 data class ReminderTime(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val hour: Int,

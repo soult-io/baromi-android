@@ -4,13 +4,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import io.soult.baromi.BuildConfig
 
 /**
  * The on-device store.
  *
- * v2 adds the reminder_time table. exportSchema is off until migrations begin; while the app is
- * unreleased we drop-and-recreate on version bumps (destructive fallback) rather than write
- * migrations for data that doesn't exist in the wild yet.
+ * v2 adds the reminder_time table. exportSchema is off until migrations begin. Destructive
+ * fallback is DEBUG-only: while unreleased we drop-and-recreate on version bumps, but a release
+ * build must never silently wipe the record — it will fail loudly until a real migration exists.
  */
 @Database(
     entities = [Checkin::class, Tag::class, CheckinTag::class, ReminderTime::class],
@@ -35,7 +36,11 @@ abstract class BaromiDatabase : RoomDatabase() {
                     BaromiDatabase::class.java,
                     NAME,
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .apply {
+                        if (BuildConfig.DEBUG) {
+                            fallbackToDestructiveMigration(dropAllTables = true)
+                        }
+                    }
                     .build()
                     .also { instance = it }
             }

@@ -54,6 +54,13 @@ class ReminderRepositoryTest {
     }
 
     @Test
+    fun duplicate_time_is_not_added_twice() = runTest {
+        assertTrue(repo.add(hour = 9, minute = 0))
+        assertFalse("same time must not duplicate", repo.add(hour = 9, minute = 0))
+        assertEquals(1, repo.all().size)
+    }
+
+    @Test
     fun remove_will_not_drop_below_min_per_day() = runTest {
         repo.seedDefaultsIfEmpty() // 3
         val times = repo.all()

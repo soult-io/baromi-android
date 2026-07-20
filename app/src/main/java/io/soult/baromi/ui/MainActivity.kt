@@ -10,16 +10,16 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.widget.TextView
-import io.soult.baromi.data.BaromiDatabase
-import io.soult.baromi.data.ReminderRepository
+import io.soult.baromi.R
 import io.soult.baromi.notify.Notifications
 import io.soult.baromi.reminder.AlarmScheduler
+import io.soult.baromi.reminder.rearmAllReminders
 import kotlinx.coroutines.runBlocking
 
 /**
  * Minimal launcher + notification target. Module B replaces the body with the real check-in
  * screen; for now it wires up the notification channel, the runtime permissions the reminder
- * engine needs, and arms the alarms on launch.
+ * engine needs, and arms the alarms.
  */
 class MainActivity : Activity() {
 
@@ -27,7 +27,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(
             TextView(this).apply {
-                text = getString(io.soult.baromi.R.string.capture_placeholder)
+                text = getString(R.string.capture_placeholder)
                 gravity = Gravity.CENTER
                 textSize = 18f
             },
@@ -36,6 +36,12 @@ class MainActivity : Activity() {
         Notifications.ensureChannel(this)
         requestNotificationPermissionIfNeeded()
         promptForExactAlarmIfNeeded()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Arm in onStart (not just onCreate) so returning from the exact-alarm settings screen,
+        // once the grant is given, actually arms the reminders.
         armReminders()
     }
 
@@ -47,7 +53,7 @@ class MainActivity : Activity() {
         }
     }
 
-    /** On 33+ exact alarms need a one-time grant in system settings; route the user there once. */
+    /** On 31+ exact alarms need a one-time grant in system settings; route the user there once. */
     private fun promptForExactAlarmIfNeeded() {
         if (!AlarmScheduler.canScheduleExact(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             runCatching {
@@ -60,13 +66,7 @@ class MainActivity : Activity() {
 
     private fun armReminders() {
         val appContext = applicationContext
-        Thread {
-            runBlocking {
-                val repo = ReminderRepository(BaromiDatabase.getInstance(appContext).reminderTimeDao())
-                repo.seedDefaultsIfEmpty()
-                AlarmScheduler.scheduleAll(appContext, repo.all())
-            }
-        }.start()
+        Thread { runBlocking { rearmAllReminders(appContext) } }.start()
     }
 
     private companion object {

@@ -14,11 +14,13 @@ class ReminderRepository(private val dao: ReminderTimeDao) {
 
     suspend fun all(): List<ReminderTime> = dao.getAll()
 
-    /** Adds a time unless already at [ReminderTime.MAX_PER_DAY]. Returns true if added. */
+    /**
+     * Adds a time unless already at [ReminderTime.MAX_PER_DAY] or the time already exists.
+     * Returns true only if a row was actually inserted (insert returns -1 on a duplicate time).
+     */
     suspend fun add(hour: Int, minute: Int): Boolean {
         if (dao.count() >= ReminderTime.MAX_PER_DAY) return false
-        dao.insert(ReminderTime(hour = hour, minute = minute))
-        return true
+        return dao.insert(ReminderTime(hour = hour, minute = minute)) >= 0
     }
 
     /** Removes a time unless it would drop below [ReminderTime.MIN_PER_DAY]. Returns true if removed. */

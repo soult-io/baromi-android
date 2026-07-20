@@ -21,7 +21,8 @@ object Notifications {
     // "answerable until the next scheduled prompt" rule.
     const val NOTIFICATION_ID = 1001
 
-    /** Extra on the tap intent carrying the scheduled prompt instant (epoch millis) into the capture screen. */
+    // The tap-hop prompt time (notification -> MainActivity, read by Module B's capture screen).
+    // Distinct key from the alarm-hop [io.soult.baromi.reminder.AlarmScheduler.EXTRA_PROMPT_TIME].
     const val EXTRA_PROMPT_TIME = "io.soult.baromi.notify.PROMPT_TIME"
 
     fun ensureChannel(context: Context) {

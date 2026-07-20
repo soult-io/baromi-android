@@ -1,0 +1,36 @@
+package io.soult.baromi.data
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
+
+@Dao
+interface CheckinDao {
+    @Insert
+    suspend fun insert(checkin: Checkin): Long
+
+    @Update
+    suspend fun update(checkin: Checkin)
+
+    @Delete
+    suspend fun delete(checkin: Checkin)
+
+    @Query("SELECT * FROM checkin WHERE id = :id")
+    suspend fun getById(id: Long): Checkin?
+
+    @Query("SELECT * FROM checkin ORDER BY answered_time DESC")
+    suspend fun getAll(): List<Checkin>
+
+    @Transaction
+    @Query("SELECT * FROM checkin WHERE id = :id")
+    suspend fun getWithTags(id: Long): CheckinWithTags?
+
+    @Insert
+    suspend fun attachTag(link: CheckinTag)
+
+    @Query("SELECT COUNT(*) FROM checkin_tag")
+    suspend fun linkCount(): Int
+}

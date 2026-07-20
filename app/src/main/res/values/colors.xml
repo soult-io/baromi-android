@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baromi "clear-sky" design system — light. Teal primary + warm amber (tertiary) accent. -->
+<resources>
+    <color name="baromi_primary">#00696F</color>
+    <color name="baromi_on_primary">#FFFFFF</color>
+    <color name="baromi_primary_container">#6FF6FF</color>
+    <color name="baromi_on_primary_container">#002022</color>
+
+    <color name="baromi_secondary">#4A6365</color>
+    <color name="baromi_on_secondary">#FFFFFF</color>
+    <color name="baromi_secondary_container">#CDE7E9</color>
+    <color name="baromi_on_secondary_container">#051F21</color>
+
+    <color name="baromi_tertiary">#7E5700</color>
+    <color name="baromi_on_tertiary">#FFFFFF</color>
+    <color name="baromi_tertiary_container">#FFDDB1</color>
+    <color name="baromi_on_tertiary_container">#281800</color>
+
+    <color name="baromi_error">#BA1A1A</color>
+    <color name="baromi_on_error">#FFFFFF</color>
+
+    <color name="baromi_background">#F5FAFB</color>
+    <color name="baromi_on_background">#171D1E</color>
+    <color name="baromi_surface">#F5FAFB</color>
+    <color name="baromi_on_surface">#171D1E</color>
+    <color name="baromi_surface_variant">#DAE4E5</color>
+    <color name="baromi_on_surface_variant">#3F4849</color>
+    <color name="baromi_outline">#6F797A</color>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baromi "clear-sky" design system — dark. -->
+<resources>
+    <color name="baromi_primary">#4FD8E0</color>
+    <color name="baromi_on_primary">#00363B</color>
+    <color name="baromi_primary_container">#004F55</color>
+    <color name="baromi_on_primary_container">#6FF6FF</color>
+
+    <color name="baromi_secondary">#B1CBCD</color>
+    <color name="baromi_on_secondary">#1B3437</color>
+    <color name="baromi_secondary_container">#324B4D</color>
+    <color name="baromi_on_secondary_container">#CDE7E9</color>
+
+    <color name="baromi_tertiary">#F5BD48</color>
+    <color name="baromi_on_tertiary">#442B00</color>
+    <color name="baromi_tertiary_container">#5F3F00</color>
+    <color name="baromi_on_tertiary_container">#FFDDB1</color>
+
+    <color name="baromi_error">#FFB4AB</color>
+    <color name="baromi_on_error">#690005</color>
+
+    <color name="baromi_background">#0E1415</color>
+    <color name="baromi_on_background">#DEE3E4</color>
+    <color name="baromi_surface">#0E1415</color>
+    <color name="baromi_on_surface">#DEE3E4</color>
+    <color name="baromi_surface_variant">#3F4849</color>
+    <color name="baromi_on_surface_variant">#BEC8C9</color>
+    <color name="baromi_outline">#899393</color>
+</resources>

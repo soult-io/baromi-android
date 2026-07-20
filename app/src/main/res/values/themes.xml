@@ -1,5 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Action-bar theme so the overflow menu (Export CSV) has somewhere to show. -->
-    <style name="Theme.Baromi" parent="Theme.Material3.DayNight" />
+    <!--
+      Baromi "clear-sky" theme. Distinct teal/amber Material 3 scheme (not the default purple).
+      Colors resolve light here and from values-night/colors.xml in dark mode via DayNight.
+    -->
+    <style name="Theme.Baromi" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/baromi_primary</item>
+        <item name="colorOnPrimary">@color/baromi_on_primary</item>
+        <item name="colorPrimaryContainer">@color/baromi_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/baromi_on_primary_container</item>
+
+        <item name="colorSecondary">@color/baromi_secondary</item>
+        <item name="colorOnSecondary">@color/baromi_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/baromi_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/baromi_on_secondary_container</item>
+
+        <item name="colorTertiary">@color/baromi_tertiary</item>
+        <item name="colorOnTertiary">@color/baromi_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/baromi_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/baromi_on_tertiary_container</item>
+
+        <item name="colorError">@color/baromi_error</item>
+        <item name="colorOnError">@color/baromi_on_error</item>
+
+        <item name="android:colorBackground">@color/baromi_background</item>
+        <item name="colorOnBackground">@color/baromi_on_background</item>
+        <item name="colorSurface">@color/baromi_surface</item>
+        <item name="colorOnSurface">@color/baromi_on_surface</item>
+        <item name="colorSurfaceVariant">@color/baromi_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/baromi_on_surface_variant</item>
+        <item name="colorOutline">@color/baromi_outline</item>
+    </style>
 </resources>

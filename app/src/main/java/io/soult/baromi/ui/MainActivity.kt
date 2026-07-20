@@ -60,8 +60,10 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSave.setOnClickListener { save() }
 
         Notifications.ensureChannel(this)
+        // Notification permission is a normal in-app dialog. The exact-alarm grant (which leaves
+        // the app for a system settings screen) is prompted from Settings instead, so opening the
+        // app lands on the capture screen rather than being yanked to system settings.
         ReminderPermissions.requestNotificationPermissionIfNeeded(this)
-        ReminderPermissions.promptForExactAlarmIfNeeded(this)
     }
 
     override fun onStart() {

@@ -7,6 +7,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -45,6 +49,7 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.buttonAddTime.setOnClickListener { pickTime() }
         binding.buttonAddTag.setOnClickListener { addTag() }
+        binding.buttonGrantPermissions.setOnClickListener { grantPermissions() }
 
         // Re-attach the result listener if a picker dialog survived a configuration change.
         (supportFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker)
@@ -60,6 +65,24 @@ class SettingsActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateReminderStatus()
+    }
+
+    private fun updateReminderStatus() {
+        val notificationsOk = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        val ready = notificationsOk && AlarmScheduler.canScheduleExact(this)
+        binding.reminderStatus.text = getString(if (ready) R.string.reminders_active else R.string.reminders_need_permission)
+        binding.buttonGrantPermissions.visibility = if (ready) View.GONE else View.VISIBLE
+    }
+
+    private fun grantPermissions() {
+        ReminderPermissions.requestNotificationPermissionIfNeeded(this)
+        ReminderPermissions.promptForExactAlarmIfNeeded(this)
     }
 
     private fun renderReminders() {

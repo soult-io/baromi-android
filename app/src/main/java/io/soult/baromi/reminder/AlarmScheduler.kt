@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.annotation.VisibleForTesting
 import io.soult.baromi.data.ReminderTime
 import java.time.Instant
 import java.time.ZoneId
@@ -21,8 +22,16 @@ object AlarmScheduler {
     const val EXTRA_MINUTE = "io.soult.baromi.reminder.MINUTE"
     const val EXTRA_PROMPT_TIME = "io.soult.baromi.reminder.PROMPT_TIME"
 
+    /**
+     * Test seam: when non-null, forces the exact-alarm capability answer. Production leaves it
+     * null and uses the real OS check (Robolectric's shadow can't be driven directly here).
+     */
+    @VisibleForTesting
+    var canScheduleExactOverride: Boolean? = null
+
     /** True when the OS will honor exact alarms (always pre-31; a special access grant on 31+). */
     fun canScheduleExact(context: Context): Boolean {
+        canScheduleExactOverride?.let { return it }
         val am = context.getSystemService(AlarmManager::class.java)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) am.canScheduleExactAlarms() else true
     }

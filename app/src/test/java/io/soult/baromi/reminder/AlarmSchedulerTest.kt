@@ -1,10 +1,10 @@
 package io.soult.baromi.reminder
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import io.soult.baromi.data.ReminderTime
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -26,10 +26,12 @@ class AlarmSchedulerTest {
     fun setup() {
         app = ApplicationProvider.getApplicationContext()
         alarmManager = app.getSystemService(AlarmManager::class.java)
-        shadowOf(app).grantPermissions(
-            Manifest.permission.SCHEDULE_EXACT_ALARM,
-            Manifest.permission.USE_EXACT_ALARM,
-        )
+        AlarmScheduler.canScheduleExactOverride = true
+    }
+
+    @After
+    fun teardown() {
+        AlarmScheduler.canScheduleExactOverride = null
     }
 
     @Test
@@ -47,6 +49,13 @@ class AlarmSchedulerTest {
         )
         AlarmScheduler.scheduleAll(app, times, now = now, zone = utc)
         assertEquals(3, shadowOf(alarmManager).scheduledAlarms.size)
+    }
+
+    @Test
+    fun nothing_armed_when_exact_alarms_denied() {
+        AlarmScheduler.canScheduleExactOverride = false
+        AlarmScheduler.scheduleOne(app, id = 1L, hour = 14, minute = 0, now = now, zone = utc)
+        assertEquals(0, shadowOf(alarmManager).scheduledAlarms.size)
     }
 
     @Test

@@ -64,4 +64,17 @@ class AlarmSchedulerTest {
         AlarmScheduler.cancelOne(app, id = 1L, hour = 14, minute = 0)
         assertEquals(0, shadowOf(alarmManager).scheduledAlarms.size)
     }
+
+    @Test
+    fun cancelling_one_of_many_leaves_the_rest() {
+        val times = listOf(
+            ReminderTime(id = 1, hour = 9, minute = 0),
+            ReminderTime(id = 2, hour = 14, minute = 0),
+            ReminderTime(id = 3, hour = 20, minute = 0),
+        )
+        AlarmScheduler.scheduleAll(app, times, now = now, zone = utc)
+        // Mirrors SettingsActivity.removeTime: the removed time's alarm must be cancelled.
+        AlarmScheduler.cancelOne(app, id = 2L, hour = 14, minute = 0)
+        assertEquals(2, shadowOf(alarmManager).scheduledAlarms.size)
+    }
 }

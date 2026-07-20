@@ -1,12 +1,8 @@
 package io.soult.baromi.ui
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
@@ -23,7 +19,7 @@ import io.soult.baromi.data.TagRepository
 import io.soult.baromi.databinding.ActivityMainBinding
 import io.soult.baromi.export.CheckinExporter
 import io.soult.baromi.notify.Notifications
-import io.soult.baromi.reminder.AlarmScheduler
+import io.soult.baromi.reminder.ReminderPermissions
 import io.soult.baromi.reminder.rearmAllReminders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -35,8 +31,8 @@ import java.io.IOException
 /**
  * The check-in screen (Module B). Opened from the launcher or a reminder notification; records
  * one check-in (mood/energy/anxiety + comment + tags) and, if it came from a notification,
- * carries that prompt's scheduled time. Hosts the CSV export action (Module F) and, until a
- * dedicated settings screen (Module E) exists, the reminder permission + arming wiring.
+ * carries that prompt's scheduled time. Menu opens Settings (Module E) and CSV export (Module F);
+ * it also requests the reminder permissions and arms the alarms on launch.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -64,8 +60,8 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSave.setOnClickListener { save() }
 
         Notifications.ensureChannel(this)
-        requestNotificationPermissionIfNeeded()
-        promptForExactAlarmIfNeeded()
+        ReminderPermissions.requestNotificationPermissionIfNeeded(this)
+        ReminderPermissions.promptForExactAlarmIfNeeded(this)
     }
 
     override fun onStart() {
@@ -81,6 +77,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
             R.id.action_export -> {
                 exportCsv()
                 true
@@ -173,27 +173,5 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(send, getString(R.string.menu_export)))
-    }
-
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_POST_NOTIFICATIONS)
-        }
-    }
-
-    private fun promptForExactAlarmIfNeeded() {
-        if (!AlarmScheduler.canScheduleExact(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            runCatching {
-                startActivity(
-                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")),
-                )
-            }
-        }
-    }
-
-    private companion object {
-        const val REQ_POST_NOTIFICATIONS = 1
     }
 }

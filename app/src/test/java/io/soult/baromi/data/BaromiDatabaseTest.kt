@@ -140,15 +140,11 @@ class BaromiDatabaseTest {
     }
 
     @Test
-    fun duplicate_tag_label_rejected() = runTest {
+    fun duplicate_tag_label_is_ignored() = runTest {
         tagDao.insert(Tag(label = "work"))
-        var threw = false
-        try {
-            tagDao.insert(Tag(label = "work"))
-        } catch (e: SQLiteConstraintException) {
-            threw = true
-        }
-        assertTrue("duplicate label should violate the unique index", threw)
+        val second = tagDao.insert(Tag(label = "work"))
+        assertEquals("duplicate insert is a no-op returning -1", -1L, second)
+        assertEquals("unique label index keeps a single row", 1, tagDao.getAll().size)
     }
 
     @Test

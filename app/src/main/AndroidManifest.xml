@@ -21,6 +21,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title" />
+
         <!-- Shares the exported CSV via the share sheet without a world-readable file. -->
         <provider
             android:name="androidx.core.content.FileProvider"

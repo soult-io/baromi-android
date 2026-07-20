@@ -6,12 +6,16 @@ plugins {
 
 android {
     namespace = "io.soult.baromi"
-    compileSdk = 34
+
+    // AGP 9 DSL. SDK 37 is the platform installed on the FRAME-DESK build host.
+    compileSdk {
+        version = release(37)
+    }
 
     defaultConfig {
         applicationId = "io.soult.baromi"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -28,12 +32,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     testOptions {
@@ -43,20 +43,24 @@ android {
     }
 }
 
-dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
+kotlin {
+    jvmToolchain(21)
+}
 
-    // Room — the frozen data layer (Module A).
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+dependencies {
+    implementation("androidx.core:core-ktx:1.19.0")
+
+    // Room — the frozen data layer (Module A). Room 2.7+ is required for KSP2 (Kotlin 2.2).
+    implementation("androidx.room:room-runtime:2.7.3")
+    implementation("androidx.room:room-ktx:2.7.3")
+    ksp("androidx.room:room-compiler:2.7.3")
 
     // Local unit tests run Room in-memory under Robolectric (no emulator needed).
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
-    testImplementation("androidx.room:room-testing:2.6.1")
+    testImplementation("androidx.room:room-testing:2.7.3")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 }

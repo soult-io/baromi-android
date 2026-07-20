@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Baromi</string>
+    <string name="capture_placeholder">Baromi — check-in screen coming soon</string>
+</resources>

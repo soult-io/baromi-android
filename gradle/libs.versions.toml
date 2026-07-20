@@ -3,6 +3,7 @@ agp = "9.2.1"
 ksp = "2.2.10-2.0.2"
 coreKtx = "1.19.0"
 room = "2.8.4"
+coroutines = "1.8.1"
 junit = "4.13.2"
 robolectric = "4.13"
 androidxTestCore = "1.6.1"
@@ -15,6 +16,7 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Baromi "clear-sky" theme. Distinct teal/amber Material 3 scheme (not the default purple).
+      Baromi "clear-sky" theme. Complete Material 3 teal/amber scheme (no default purple).
       Colors resolve light here and from values-night/colors.xml in dark mode via DayNight.
     -->
     <style name="Theme.Baromi" parent="Theme.Material3.DayNight">
@@ -22,6 +22,8 @@
 
         <item name="colorError">@color/baromi_error</item>
         <item name="colorOnError">@color/baromi_on_error</item>
+        <item name="colorErrorContainer">@color/baromi_error_container</item>
+        <item name="colorOnErrorContainer">@color/baromi_on_error_container</item>
 
         <item name="android:colorBackground">@color/baromi_background</item>
         <item name="colorOnBackground">@color/baromi_on_background</item>
@@ -29,7 +31,13 @@
         <item name="colorOnSurface">@color/baromi_on_surface</item>
         <item name="colorSurfaceVariant">@color/baromi_surface_variant</item>
         <item name="colorOnSurfaceVariant">@color/baromi_on_surface_variant</item>
+
         <item name="colorOutline">@color/baromi_outline</item>
+        <item name="colorOutlineVariant">@color/baromi_outline_variant</item>
+
+        <item name="colorSurfaceInverse">@color/baromi_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/baromi_inverse_on_surface</item>
+        <item name="colorPrimaryInverse">@color/baromi_inverse_primary</item>
 
         <item name="colorSurfaceDim">@color/baromi_surface_dim</item>
         <item name="colorSurfaceBright">@color/baromi_surface_bright</item>
@@ -38,5 +46,18 @@
         <item name="colorSurfaceContainer">@color/baromi_surface_container</item>
         <item name="colorSurfaceContainerHigh">@color/baromi_surface_container_high</item>
         <item name="colorSurfaceContainerHighest">@color/baromi_surface_container_highest</item>
+
+        <item name="colorPrimaryFixed">@color/baromi_primary_fixed</item>
+        <item name="colorPrimaryFixedDim">@color/baromi_primary_fixed_dim</item>
+        <item name="colorOnPrimaryFixed">@color/baromi_on_primary_fixed</item>
+        <item name="colorOnPrimaryFixedVariant">@color/baromi_on_primary_fixed_variant</item>
+        <item name="colorSecondaryFixed">@color/baromi_secondary_fixed</item>
+        <item name="colorSecondaryFixedDim">@color/baromi_secondary_fixed_dim</item>
+        <item name="colorOnSecondaryFixed">@color/baromi_on_secondary_fixed</item>
+        <item name="colorOnSecondaryFixedVariant">@color/baromi_on_secondary_fixed_variant</item>
+        <item name="colorTertiaryFixed">@color/baromi_tertiary_fixed</item>
+        <item name="colorTertiaryFixedDim">@color/baromi_tertiary_fixed_dim</item>
+        <item name="colorOnTertiaryFixed">@color/baromi_on_tertiary_fixed</item>
+        <item name="colorOnTertiaryFixedVariant">@color/baromi_on_tertiary_fixed_variant</item>
     </style>
 </resources>

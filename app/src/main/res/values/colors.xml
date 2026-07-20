@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Baromi "clear-sky" design system — light. Teal primary + warm amber (tertiary) accent. -->
+<!-- Baromi "clear-sky" design system — LIGHT. Complete Material 3 role set (teal + amber). -->
 <resources>
     <color name="baromi_primary">#00696F</color>
     <color name="baromi_on_primary">#FFFFFF</color>
@@ -18,6 +18,8 @@
 
     <color name="baromi_error">#BA1A1A</color>
     <color name="baromi_on_error">#FFFFFF</color>
+    <color name="baromi_error_container">#FFDAD6</color>
+    <color name="baromi_on_error_container">#410002</color>
 
     <color name="baromi_background">#F5FAFB</color>
     <color name="baromi_on_background">#171D1E</color>
@@ -25,9 +27,14 @@
     <color name="baromi_on_surface">#171D1E</color>
     <color name="baromi_surface_variant">#DAE4E5</color>
     <color name="baromi_on_surface_variant">#3F4849</color>
-    <color name="baromi_outline">#6F797A</color>
 
-    <!-- Full M3 surface-container ramp (cool neutrals) — app bars, sheets, cards use these. -->
+    <color name="baromi_outline">#6F797A</color>
+    <color name="baromi_outline_variant">#BFC8C9</color>
+
+    <color name="baromi_inverse_surface">#2B3132</color>
+    <color name="baromi_inverse_on_surface">#ECF2F3</color>
+    <color name="baromi_inverse_primary">#4FD8E0</color>
+
     <color name="baromi_surface_dim">#D6DCDD</color>
     <color name="baromi_surface_bright">#F5FAFB</color>
     <color name="baromi_surface_container_lowest">#FFFFFF</color>
@@ -35,4 +42,17 @@
     <color name="baromi_surface_container">#EAF0F1</color>
     <color name="baromi_surface_container_high">#E4EAEB</color>
     <color name="baromi_surface_container_highest">#DEE4E5</color>
+
+    <color name="baromi_primary_fixed">#6FF6FF</color>
+    <color name="baromi_primary_fixed_dim">#4FD8E0</color>
+    <color name="baromi_on_primary_fixed">#002022</color>
+    <color name="baromi_on_primary_fixed_variant">#004F55</color>
+    <color name="baromi_secondary_fixed">#CDE7E9</color>
+    <color name="baromi_secondary_fixed_dim">#B1CBCD</color>
+    <color name="baromi_on_secondary_fixed">#051F21</color>
+    <color name="baromi_on_secondary_fixed_variant">#324B4D</color>
+    <color name="baromi_tertiary_fixed">#FFDDB1</color>
+    <color name="baromi_tertiary_fixed_dim">#F5BD48</color>
+    <color name="baromi_on_tertiary_fixed">#281800</color>
+    <color name="baromi_on_tertiary_fixed_variant">#5F3F00</color>
 </resources>

@@ -1,37 +1,59 @@
 package io.soult.baromi.ui
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.Gravity
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.chip.Chip
+import com.google.android.material.slider.Slider
 import io.soult.baromi.R
+import io.soult.baromi.capture.CheckinRecorder
+import io.soult.baromi.data.BaromiDatabase
+import io.soult.baromi.data.TagRepository
+import io.soult.baromi.databinding.ActivityMainBinding
 import io.soult.baromi.notify.Notifications
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.rearmAllReminders
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * Minimal launcher + notification target. Module B replaces the body with the real check-in
- * screen; for now it wires up the notification channel, the runtime permissions the reminder
- * engine needs, and arms the alarms.
+ * The check-in screen (Module B). Opened from the launcher or a reminder notification; records
+ * one check-in (mood/energy/anxiety + comment + tags) and, if it came from a notification,
+ * carries that prompt's scheduled time. Also hosts the reminder engine's permission + arming
+ * wiring (Module C/D) until a dedicated settings screen (Module E) takes it over.
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+
+    private val db by lazy { BaromiDatabase.getInstance(this) }
+    private val recorder by lazy { CheckinRecorder(db) }
+    private val tagRepository by lazy { TagRepository(db.tagDao()) }
+
+    private var promptTime: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(
-            TextView(this).apply {
-                text = getString(R.string.capture_placeholder)
-                gravity = Gravity.CENTER
-                textSize = 18f
-            },
-        )
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        promptTime = intent.getLongExtra(Notifications.EXTRA_PROMPT_TIME, 0L).takeIf { it > 0L }
+
+        bindAxis(binding.sliderMood, binding.valueMood, getString(R.string.axis_mood))
+        bindAxis(binding.sliderEnergy, binding.valueEnergy, getString(R.string.axis_energy))
+        bindAxis(binding.sliderAnxiety, binding.valueAnxiety, getString(R.string.axis_anxiety))
+
+        loadTags()
+        binding.buttonSave.setOnClickListener { save() }
 
         Notifications.ensureChannel(this)
         requestNotificationPermissionIfNeeded()
@@ -40,9 +62,64 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        // Arm in onStart (not just onCreate) so returning from the exact-alarm settings screen,
-        // once the grant is given, actually arms the reminders.
-        armReminders()
+        // Arm here so returning from the exact-alarm settings grant actually arms the reminders.
+        lifecycleScope.launch { rearmAllReminders(applicationContext) }
+    }
+
+    private fun bindAxis(slider: Slider, value: TextView, label: String) {
+        value.text = getString(R.string.axis_value_format, label, slider.value.toInt())
+        slider.addOnChangeListener { _, v, _ ->
+            value.text = getString(R.string.axis_value_format, label, v.toInt())
+        }
+    }
+
+    private fun loadTags() {
+        lifecycleScope.launch {
+            tagRepository.seedDefaultsIfEmpty()
+            tagRepository.all().forEach { tag ->
+                binding.chipGroupTags.addView(
+                    Chip(this@MainActivity).apply {
+                        text = tag.label
+                        isCheckable = true
+                        this.tag = tag.id
+                    },
+                )
+            }
+        }
+    }
+
+    private fun save() {
+        // Disable immediately so a double-tap can't write two near-duplicate check-ins.
+        binding.buttonSave.isEnabled = false
+
+        val tagIds = binding.chipGroupTags.checkedChipIds.mapNotNull { chipId ->
+            binding.chipGroupTags.findViewById<Chip>(chipId)?.tag as? Long
+        }
+        val comment = binding.inputComment.text?.toString()
+        val mood = binding.sliderMood.value.toInt()
+        val energy = binding.sliderEnergy.value.toInt()
+        val anxiety = binding.sliderAnxiety.value.toInt()
+
+        lifecycleScope.launch {
+            try {
+                // NonCancellable: a rotation/kill mid-write must not drop a committed check-in.
+                withContext(NonCancellable) {
+                    recorder.record(
+                        mood = mood,
+                        energy = energy,
+                        anxiety = anxiety,
+                        comment = comment,
+                        tagIds = tagIds,
+                        promptTime = promptTime,
+                        answeredTime = System.currentTimeMillis(),
+                    )
+                }
+                Toast.makeText(this@MainActivity, R.string.saved_confirmation, Toast.LENGTH_SHORT).show()
+                finish()
+            } catch (e: Exception) {
+                binding.buttonSave.isEnabled = true
+            }
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
@@ -53,7 +130,6 @@ class MainActivity : Activity() {
         }
     }
 
-    /** On 31+ exact alarms need a one-time grant in system settings; route the user there once. */
     private fun promptForExactAlarmIfNeeded() {
         if (!AlarmScheduler.canScheduleExact(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             runCatching {
@@ -62,11 +138,6 @@ class MainActivity : Activity() {
                 )
             }
         }
-    }
-
-    private fun armReminders() {
-        val appContext = applicationContext
-        Thread { runBlocking { rearmAllReminders(appContext) } }.start()
     }
 
     private companion object {

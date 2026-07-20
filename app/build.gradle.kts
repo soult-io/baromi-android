@@ -1,6 +1,6 @@
 plugins {
+    // AGP 9 compiles Kotlin natively; only KSP is applied on top for Room's compiler.
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
@@ -43,8 +43,11 @@ android {
     }
 }
 
+// Built-in Kotlin config (AGP 9): keep the Kotlin JVM target aligned with Java above.
 kotlin {
-    jvmToolchain(21)
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
 }
 
 dependencies {

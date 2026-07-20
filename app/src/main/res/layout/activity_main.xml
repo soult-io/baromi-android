@@ -22,72 +22,51 @@
 
         <!-- Mood -->
         <TextView
-            android:id="@+id/valueMood"
+            android:id="@+id/captionMood"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-        <com.google.android.material.slider.Slider
-            android:id="@+id/sliderMood"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleMood"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:valueFrom="1.0"
-            android:valueTo="5.0"
-            android:value="3.0"
-            android:stepSize="1.0" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
-            android:text="@string/mood_anchors"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+            app:selectionRequired="false"
+            app:singleSelection="true" />
 
         <!-- Energy -->
         <TextView
-            android:id="@+id/valueEnergy"
+            android:id="@+id/captionEnergy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-        <com.google.android.material.slider.Slider
-            android:id="@+id/sliderEnergy"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleEnergy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:valueFrom="1.0"
-            android:valueTo="5.0"
-            android:value="3.0"
-            android:stepSize="1.0" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
-            android:text="@string/energy_anchors"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+            app:selectionRequired="false"
+            app:singleSelection="true" />
 
         <!-- Anxiety -->
         <TextView
-            android:id="@+id/valueAnxiety"
+            android:id="@+id/captionAnxiety"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-        <com.google.android.material.slider.Slider
-            android:id="@+id/sliderAnxiety"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleAnxiety"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:valueFrom="1.0"
-            android:valueTo="5.0"
-            android:value="3.0"
-            android:stepSize="1.0" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp"
-            android:text="@string/anxiety_anchors"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+            app:selectionRequired="false"
+            app:singleSelection="true" />
 
         <!-- Comment -->
         <com.google.android.material.textfield.TextInputLayout
@@ -125,6 +104,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
+            android:enabled="false"
             android:text="@string/save_checkin" />
 
     </LinearLayout>

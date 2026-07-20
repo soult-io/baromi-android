@@ -18,13 +18,15 @@ import io.soult.baromi.data.ReminderTime
 import io.soult.baromi.data.Tag
 import io.soult.baromi.data.TagRepository
 import io.soult.baromi.databinding.ActivitySettingsBinding
+import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.ReminderPermissions
 import io.soult.baromi.reminder.rearmAllReminders
 import kotlinx.coroutines.launch
 
 /**
  * Module E — configure reminder times (add/remove within 1..8) and manage tags. Every reminder
- * change re-arms the alarms so a change takes effect immediately.
+ * change re-arms the alarms (and a removal cancels the removed time's alarm) so a change takes
+ * effect immediately.
  */
 class SettingsActivity : AppCompatActivity() {
 
@@ -43,6 +45,10 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonAddTime.setOnClickListener { pickTime() }
         binding.buttonAddTag.setOnClickListener { addTag() }
 
+        // Re-attach the result listener if a picker dialog survived a configuration change.
+        (supportFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker)
+            ?.let(::attachTimePickerListener)
+
         ReminderPermissions.requestNotificationPermissionIfNeeded(this)
         ReminderPermissions.promptForExactAlarmIfNeeded(this)
 
@@ -53,8 +59,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun renderReminders() {
         lifecycleScope.launch {
             reminders.seedDefaultsIfEmpty()
+            // Read first, then clear+populate in one non-suspending block so concurrent renders
+            // can't interleave into duplicate rows.
+            val times = reminders.all()
             binding.containerReminders.removeAllViews()
-            reminders.all().forEach { time ->
+            times.forEach { time ->
                 binding.containerReminders.addView(
                     listRow(getString(R.string.reminder_time_format, time.hour, time.minute)) { removeTime(time) },
                 )
@@ -65,8 +74,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun renderTags() {
         lifecycleScope.launch {
             tags.seedDefaultsIfEmpty()
+            val all = tags.all()
             binding.containerTags.removeAllViews()
-            tags.all().forEach { tag ->
+            all.forEach { tag ->
                 binding.containerTags.addView(listRow(tag.label) { removeTag(tag) })
             }
         }
@@ -78,23 +88,33 @@ class SettingsActivity : AppCompatActivity() {
             .setHour(9)
             .setMinute(0)
             .build()
+        attachTimePickerListener(picker)
+        picker.show(supportFragmentManager, TIME_PICKER_TAG)
+    }
+
+    private fun attachTimePickerListener(picker: MaterialTimePicker) {
         picker.addOnPositiveButtonClickListener { addTime(picker.hour, picker.minute) }
-        picker.show(supportFragmentManager, "time-picker")
     }
 
     private fun addTime(hour: Int, minute: Int) {
         lifecycleScope.launch {
-            if (!reminders.add(hour, minute)) {
-                toast(R.string.reminder_max_reached)
+            when (reminders.add(hour, minute)) {
+                ReminderRepository.AddResult.ADDED -> {
+                    rearmAllReminders(applicationContext)
+                    renderReminders()
+                }
+                ReminderRepository.AddResult.DUPLICATE -> toast(R.string.reminder_duplicate)
+                ReminderRepository.AddResult.MAX_REACHED -> toast(R.string.reminder_max_reached)
             }
-            rearmAllReminders(applicationContext)
-            renderReminders()
         }
     }
 
     private fun removeTime(time: ReminderTime) {
         lifecycleScope.launch {
             if (reminders.remove(time)) {
+                // Cancel the removed time's already-armed alarm — otherwise it keeps firing daily
+                // (ReminderReceiver re-arms it from the intent), surviving until reboot.
+                AlarmScheduler.cancelOne(applicationContext, time.id, time.hour, time.minute)
                 rearmAllReminders(applicationContext)
                 renderReminders()
             } else {
@@ -144,5 +164,9 @@ class SettingsActivity : AppCompatActivity() {
             },
         )
         return row
+    }
+
+    private companion object {
+        const val TIME_PICKER_TAG = "time-picker"
     }
 }

@@ -47,16 +47,16 @@ class ReminderRepositoryTest {
     @Test
     fun add_is_capped_at_max_per_day() = runTest {
         repeat(ReminderTime.MAX_PER_DAY) { i ->
-            assertTrue(repo.add(hour = 8, minute = i))
+            assertEquals(ReminderRepository.AddResult.ADDED, repo.add(hour = 8, minute = i))
         }
-        assertFalse("9th add must be rejected", repo.add(hour = 23, minute = 0))
+        assertEquals(ReminderRepository.AddResult.MAX_REACHED, repo.add(hour = 23, minute = 0))
         assertEquals(ReminderTime.MAX_PER_DAY, repo.all().size)
     }
 
     @Test
-    fun duplicate_time_is_not_added_twice() = runTest {
-        assertTrue(repo.add(hour = 9, minute = 0))
-        assertFalse("same time must not duplicate", repo.add(hour = 9, minute = 0))
+    fun duplicate_time_reports_duplicate() = runTest {
+        assertEquals(ReminderRepository.AddResult.ADDED, repo.add(hour = 9, minute = 0))
+        assertEquals(ReminderRepository.AddResult.DUPLICATE, repo.add(hour = 9, minute = 0))
         assertEquals(1, repo.all().size)
     }
 

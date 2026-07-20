@@ -30,5 +30,13 @@
         <item name="colorSurfaceVariant">@color/baromi_surface_variant</item>
         <item name="colorOnSurfaceVariant">@color/baromi_on_surface_variant</item>
         <item name="colorOutline">@color/baromi_outline</item>
+
+        <item name="colorSurfaceDim">@color/baromi_surface_dim</item>
+        <item name="colorSurfaceBright">@color/baromi_surface_bright</item>
+        <item name="colorSurfaceContainerLowest">@color/baromi_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/baromi_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/baromi_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/baromi_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/baromi_surface_container_highest</item>
     </style>
 </resources>

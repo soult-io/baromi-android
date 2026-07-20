@@ -26,4 +26,13 @@
     <color name="baromi_surface_variant">#DAE4E5</color>
     <color name="baromi_on_surface_variant">#3F4849</color>
     <color name="baromi_outline">#6F797A</color>
+
+    <!-- Full M3 surface-container ramp (cool neutrals) — app bars, sheets, cards use these. -->
+    <color name="baromi_surface_dim">#D6DCDD</color>
+    <color name="baromi_surface_bright">#F5FAFB</color>
+    <color name="baromi_surface_container_lowest">#FFFFFF</color>
+    <color name="baromi_surface_container_low">#EFF5F6</color>
+    <color name="baromi_surface_container">#EAF0F1</color>
+    <color name="baromi_surface_container_high">#E4EAEB</color>
+    <color name="baromi_surface_container_highest">#DEE4E5</color>
 </resources>

@@ -36,6 +36,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -52,6 +56,7 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
 
     // Room — the frozen data layer (Module A). Room 2.7+ is required for KSP2 (Kotlin 2.2).
     implementation(libs.room.runtime)

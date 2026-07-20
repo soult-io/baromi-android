@@ -30,6 +30,11 @@ interface CheckinDao {
     @Query("SELECT * FROM checkin WHERE id = :id")
     suspend fun getWithTags(id: Long): CheckinWithTags?
 
+    // Whole record, newest first, for CSV export. id tiebreaker keeps same-millis order stable.
+    @Transaction
+    @Query("SELECT * FROM checkin ORDER BY answered_time DESC, id DESC")
+    suspend fun getAllWithTags(): List<CheckinWithTags>
+
     // IGNORE keeps tag attachment idempotent — re-attaching the same (checkin, tag) is a no-op,
     // so a double-tap in the capture UI can't crash on the composite-PK conflict.
     @Insert(onConflict = OnConflictStrategy.IGNORE)

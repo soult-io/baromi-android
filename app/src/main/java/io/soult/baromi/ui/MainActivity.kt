@@ -7,9 +7,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.chip.Chip
 import com.google.android.material.slider.Slider
@@ -18,18 +21,22 @@ import io.soult.baromi.capture.CheckinRecorder
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.data.TagRepository
 import io.soult.baromi.databinding.ActivityMainBinding
+import io.soult.baromi.export.CheckinExporter
 import io.soult.baromi.notify.Notifications
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.rearmAllReminders
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
 
 /**
  * The check-in screen (Module B). Opened from the launcher or a reminder notification; records
  * one check-in (mood/energy/anxiety + comment + tags) and, if it came from a notification,
- * carries that prompt's scheduled time. Also hosts the reminder engine's permission + arming
- * wiring (Module C/D) until a dedicated settings screen (Module E) takes it over.
+ * carries that prompt's scheduled time. Hosts the CSV export action (Module F) and, until a
+ * dedicated settings screen (Module E) exists, the reminder permission + arming wiring.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private val db by lazy { BaromiDatabase.getInstance(this) }
     private val recorder by lazy { CheckinRecorder(db) }
     private val tagRepository by lazy { TagRepository(db.tagDao()) }
+    private val exporter by lazy { CheckinExporter(db) }
 
     private var promptTime: Long? = null
 
@@ -65,6 +73,20 @@ class MainActivity : AppCompatActivity() {
         // Arm here so returning from the exact-alarm settings grant actually arms the reminders.
         lifecycleScope.launch { rearmAllReminders(applicationContext) }
     }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.action_export -> {
+                exportCsv()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
 
     private fun bindAxis(slider: Slider, value: TextView, label: String) {
         value.text = getString(R.string.axis_value_format, label, slider.value.toInt())
@@ -120,6 +142,37 @@ class MainActivity : AppCompatActivity() {
                 binding.buttonSave.isEnabled = true
             }
         }
+    }
+
+    private fun exportCsv() {
+        lifecycleScope.launch {
+            try {
+                // Serialize + write off the main thread; surface failures instead of crashing.
+                val uri = withContext(Dispatchers.IO) { writeCsvToCache(exporter.exportCsv()) }
+                shareCsv(uri)
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, R.string.export_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun writeCsvToCache(csv: String): Uri {
+        val dir = File(cacheDir, "exports")
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw IOException("could not create export directory: $dir")
+        }
+        val file = File(dir, "baromi-export.csv")
+        file.writeText(csv)
+        return FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+    }
+
+    private fun shareCsv(uri: Uri) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(send, getString(R.string.menu_export)))
     }
 
     private fun requestNotificationPermissionIfNeeded() {

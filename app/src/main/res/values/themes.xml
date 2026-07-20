@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Baromi" parent="Theme.Material3.DayNight.NoActionBar" />
+    <!-- Action-bar theme so the overflow menu (Export CSV) has somewhere to show. -->
+    <style name="Theme.Baromi" parent="Theme.Material3.DayNight" />
 </resources>

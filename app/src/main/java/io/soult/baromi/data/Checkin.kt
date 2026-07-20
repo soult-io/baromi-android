@@ -25,13 +25,13 @@ data class Checkin(
     val locked: Boolean = false,
 ) {
     init {
-        require(ScaleSchema.inRange(mood)) { "mood out of range 1..5: $mood" }
-        require(ScaleSchema.inRange(energy)) { "energy out of range 1..5: $energy" }
-        require(ScaleSchema.inRange(anxiety)) { "anxiety out of range 1..5: $anxiety" }
+        ScaleSchema.requireInRange("mood", mood)
+        ScaleSchema.requireInRange("energy", energy)
+        ScaleSchema.requireInRange("anxiety", anxiety)
         require((comment?.length ?: 0) <= COMMENT_MAX_LEN) {
             "comment exceeds $COMMENT_MAX_LEN chars"
         }
-        require(answeredTime > 0) { "answeredTime must be set" }
+        require(answeredTime > 0) { "answeredTime must be a positive epoch-millis: $answeredTime" }
     }
 
     companion object {

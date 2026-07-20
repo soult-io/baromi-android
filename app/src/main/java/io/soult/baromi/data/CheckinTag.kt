@@ -6,8 +6,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 
 /**
- * Join row linking a [Checkin] to a [Tag]. Deleting either parent cascades to remove the
- * link (Room enables foreign-key enforcement by default), so no orphan links survive.
+ * Join row linking a [Checkin] to a [Tag]. (Room enables foreign-key enforcement by default.)
+ *
+ * The two FKs are deliberately asymmetric to protect the longitudinal record:
+ * - deleting a **check-in** CASCADEs — its tag links go with it, tags themselves stay.
+ * - deleting a **tag** is RESTRICTed — you cannot silently strip a tag from historic
+ *   check-ins; Module E must detach (or reassign) it first.
  */
 @Entity(
     tableName = "checkin_tag",
@@ -23,7 +27,7 @@ import androidx.room.Index
             entity = Tag::class,
             parentColumns = ["id"],
             childColumns = ["tag_id"],
-            onDelete = ForeignKey.CASCADE,
+            onDelete = ForeignKey.RESTRICT,
         ),
     ],
     indices = [Index("tag_id")],

@@ -24,4 +24,8 @@ object ScaleSchema {
     )
 
     fun inRange(value: Int): Boolean = value in MIN..MAX
+
+    /** Guard an axis value against the frozen bounds; the message tracks [MIN]/[MAX], never a copy. */
+    fun requireInRange(axis: String, value: Int) =
+        require(inRange(value)) { "$axis out of range $MIN..$MAX: $value" }
 }

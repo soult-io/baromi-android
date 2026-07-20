@@ -1,7 +1,7 @@
 plugins {
     // AGP 9 compiles Kotlin natively; only KSP is applied on top for Room's compiler.
-    id("com.android.application")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -51,19 +51,18 @@ kotlin {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.19.0")
+    implementation(libs.androidx.core.ktx)
 
     // Room — the frozen data layer (Module A). Room 2.7+ is required for KSP2 (Kotlin 2.2).
-    implementation("androidx.room:room-runtime:2.8.4")
-    implementation("androidx.room:room-ktx:2.8.4")
-    ksp("androidx.room:room-compiler:2.8.4")
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
     // Local unit tests run Room in-memory under Robolectric (no emulator needed).
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.13")
-    testImplementation("androidx.test:core:1.6.1")
-    testImplementation("androidx.test.ext:junit:1.2.1")
-    testImplementation("androidx.room:room-testing:2.8.4")
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

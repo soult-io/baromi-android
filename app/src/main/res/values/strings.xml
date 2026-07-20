@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Baromi</string>
-    <string name="capture_placeholder">Baromi — check-in screen coming soon</string>
+
+    <string name="checkin_title">How are you right now?</string>
+    <string name="axis_mood">Mood</string>
+    <string name="axis_energy">Energy</string>
+    <string name="axis_anxiety">Anxiety</string>
+    <string name="mood_anchors">1 = very low · 5 = very good</string>
+    <string name="energy_anchors">1 = drained · 5 = energized</string>
+    <string name="anxiety_anchors">1 = very anxious · 5 = very calm</string>
+    <string name="comment_hint">Comment (optional)</string>
+    <string name="tags_header">Tags</string>
+    <string name="axis_value_format">%1$s: %2$d</string>
+    <string name="save_checkin">Save check-in</string>
+    <string name="saved_confirmation">Check-in saved</string>
 </resources>

@@ -1,37 +1,56 @@
 package io.soult.baromi.ui
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.Gravity
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.slider.Slider
+import com.google.android.material.textfield.TextInputEditText
 import io.soult.baromi.R
+import io.soult.baromi.capture.CheckinRecorder
+import io.soult.baromi.data.BaromiDatabase
+import io.soult.baromi.data.TagRepository
 import io.soult.baromi.notify.Notifications
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.rearmAllReminders
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 /**
- * Minimal launcher + notification target. Module B replaces the body with the real check-in
- * screen; for now it wires up the notification channel, the runtime permissions the reminder
- * engine needs, and arms the alarms.
+ * The check-in screen (Module B). Opened from the launcher or a reminder notification; records
+ * one check-in (mood/energy/anxiety + comment + tags) and, if it came from a notification,
+ * carries that prompt's scheduled time. Also hosts the reminder engine's permission + arming
+ * wiring (Module C/D) until a dedicated settings screen (Module E) takes it over.
  */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
+
+    private val db by lazy { BaromiDatabase.getInstance(this) }
+    private val recorder by lazy { CheckinRecorder(db) }
+    private val tagRepository by lazy { TagRepository(db.tagDao()) }
+
+    private var promptTime: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(
-            TextView(this).apply {
-                text = getString(R.string.capture_placeholder)
-                gravity = Gravity.CENTER
-                textSize = 18f
-            },
-        )
+        setContentView(R.layout.activity_main)
+
+        promptTime = intent.getLongExtra(Notifications.EXTRA_PROMPT_TIME, 0L).takeIf { it > 0L }
+
+        bindAxis(R.id.sliderMood, R.id.valueMood, getString(R.string.axis_mood))
+        bindAxis(R.id.sliderEnergy, R.id.valueEnergy, getString(R.string.axis_energy))
+        bindAxis(R.id.sliderAnxiety, R.id.valueAnxiety, getString(R.string.axis_anxiety))
+
+        loadTags()
+        findViewById<MaterialButton>(R.id.buttonSave).setOnClickListener { save() }
 
         Notifications.ensureChannel(this)
         requestNotificationPermissionIfNeeded()
@@ -40,9 +59,55 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        // Arm in onStart (not just onCreate) so returning from the exact-alarm settings screen,
-        // once the grant is given, actually arms the reminders.
-        armReminders()
+        // Arm here so returning from the exact-alarm settings grant actually arms the reminders.
+        lifecycleScope.launch { rearmAllReminders(applicationContext) }
+    }
+
+    private fun bindAxis(sliderId: Int, valueId: Int, label: String) {
+        val slider = findViewById<Slider>(sliderId)
+        val value = findViewById<TextView>(valueId)
+        value.text = getString(R.string.axis_value_format, label, slider.value.toInt())
+        slider.addOnChangeListener { _, v, _ ->
+            value.text = getString(R.string.axis_value_format, label, v.toInt())
+        }
+    }
+
+    private fun loadTags() {
+        val chipGroup = findViewById<ChipGroup>(R.id.chipGroupTags)
+        lifecycleScope.launch {
+            tagRepository.seedDefaultsIfEmpty()
+            tagRepository.all().forEach { tag ->
+                chipGroup.addView(
+                    Chip(this@MainActivity).apply {
+                        text = tag.label
+                        isCheckable = true
+                        this.tag = tag.id
+                    },
+                )
+            }
+        }
+    }
+
+    private fun save() {
+        val chipGroup = findViewById<ChipGroup>(R.id.chipGroupTags)
+        val tagIds = chipGroup.checkedChipIds.mapNotNull { chipId ->
+            (chipGroup.findViewById<Chip>(chipId))?.tag as? Long
+        }
+        val comment = findViewById<TextInputEditText>(R.id.inputComment).text?.toString()
+
+        lifecycleScope.launch {
+            recorder.record(
+                mood = findViewById<Slider>(R.id.sliderMood).value.toInt(),
+                energy = findViewById<Slider>(R.id.sliderEnergy).value.toInt(),
+                anxiety = findViewById<Slider>(R.id.sliderAnxiety).value.toInt(),
+                comment = comment,
+                tagIds = tagIds,
+                promptTime = promptTime,
+                answeredTime = System.currentTimeMillis(),
+            )
+            Toast.makeText(this@MainActivity, R.string.saved_confirmation, Toast.LENGTH_SHORT).show()
+            finish()
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
@@ -53,7 +118,6 @@ class MainActivity : Activity() {
         }
     }
 
-    /** On 31+ exact alarms need a one-time grant in system settings; route the user there once. */
     private fun promptForExactAlarmIfNeeded() {
         if (!AlarmScheduler.canScheduleExact(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             runCatching {
@@ -62,11 +126,6 @@ class MainActivity : Activity() {
                 )
             }
         }
-    }
-
-    private fun armReminders() {
-        val appContext = applicationContext
-        Thread { runBlocking { rearmAllReminders(appContext) } }.start()
     }
 
     private companion object {

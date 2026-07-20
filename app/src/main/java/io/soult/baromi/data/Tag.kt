@@ -16,4 +16,10 @@ data class Tag(
     init {
         require(label.isNotBlank()) { "tag label must not be blank" }
     }
+
+    companion object {
+        /** Seeded on first run so the capture screen has tags to offer; editable later (Module E). */
+        val DEFAULTS = listOf("work", "sleep-poor", "social", "exercise", "sick", "alone")
+            .map { Tag(label = it) }
+    }
 }

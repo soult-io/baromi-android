@@ -56,6 +56,9 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.google.material)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
     // Room — the frozen data layer (Module A). Room 2.7+ is required for KSP2 (Kotlin 2.2).

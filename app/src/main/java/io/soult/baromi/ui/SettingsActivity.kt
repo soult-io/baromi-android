@@ -41,6 +41,7 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         title = getString(R.string.settings_title)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.buttonAddTime.setOnClickListener { pickTime() }
         binding.buttonAddTag.setOnClickListener { addTag() }
@@ -54,6 +55,11 @@ class SettingsActivity : AppCompatActivity() {
 
         renderReminders()
         renderTags()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     private fun renderReminders() {

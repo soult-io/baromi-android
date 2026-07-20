@@ -9,6 +9,10 @@
     <string name="comment_hint">Comment (optional)</string>
     <string name="tags_header">Tags</string>
     <string name="axis_caption_format">%1$s: %2$s</string>
+    <string name="nav_capture">Check in</string>
+    <string name="nav_history">History</string>
+    <string name="history_empty">No check-ins yet.\nTap “Check in” to record how you feel.</string>
+    <string name="checkin_axes_format">Mood %1$d · Energy %2$d · Anxiety %3$d</string>
     <string name="save_checkin">Save check-in</string>
     <string name="saved_confirmation">Check-in saved</string>
     <string name="menu_export">Export CSV</string>

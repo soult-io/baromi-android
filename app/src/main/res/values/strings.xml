@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Baromi</string>
-
     <string name="checkin_title">How are you right now?</string>
     <string name="axis_mood">Mood</string>
     <string name="axis_energy">Energy</string>
@@ -11,8 +10,8 @@
     <string name="axis_caption_format">%1$s: %2$s</string>
     <string name="nav_capture">Check in</string>
     <string name="nav_history">History</string>
-    <string name="history_empty">No check-ins yet.\nTap “Check in” to record how you feel.</string>
-    <string name="checkin_axes_format">Mood %1$d · Energy %2$d · Anxiety %3$d</string>
+    <string name="history_empty">No check-ins yet.\nTap Check in to record how you feel.</string>
+    <string name="checkin_axes_format">Mood %1$d  -  Energy %2$d  -  Anxiety %3$d</string>
     <string name="save_checkin">Save check-in</string>
     <string name="saved_confirmation">Check-in saved</string>
     <string name="menu_export">Export CSV</string>
@@ -31,4 +30,12 @@
     <string name="reminder_min_reached">Keep at least one reminder</string>
     <string name="reminder_max_reached">Up to 8 reminders</string>
     <string name="reminder_duplicate">That time is already set</string>
+    <string name="onboarding_title">Welcome to Baromi</string>
+    <string name="onboarding_body">Check in on how you feel: mood, energy, and how calm or anxious you are. It stays private on your device. Review your history and export it anytime.</string>
+    <string name="onboarding_reminders">Want gentle reminders? Baromi can nudge you to check in at times you choose. It\'s optional; you can always check in yourself.</string>
+    <string name="onboarding_enable">Enable reminders</string>
+    <string name="onboarding_skip">Not now</string>
+    <string name="reminders_active">Reminders are on.</string>
+    <string name="reminders_need_permission">Reminders won\'t fire until you grant permission.</string>
+    <string name="grant_permission">Grant permission</string>
 </resources>

@@ -50,6 +50,10 @@ class MainActivity : AppCompatActivity() {
             show(CaptureFragment.newInstance(promptTime), R.string.nav_capture, history = false)
         }
 
+        if (savedInstanceState == null && !OnboardingActivity.isOnboarded(this)) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+        }
+
         Notifications.ensureChannel(this)
         ReminderPermissions.requestNotificationPermissionIfNeeded(this)
     }

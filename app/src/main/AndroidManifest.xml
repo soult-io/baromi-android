@@ -53,6 +53,10 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".ui.OnboardingActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

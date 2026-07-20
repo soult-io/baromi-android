@@ -6,18 +6,27 @@ import io.soult.baromi.data.ScaleSchema
 /**
  * Pure CSV serialization of the record — no Android types, so it is exhaustively testable.
  *
- * Layout: a single quoted legend line documenting the (frozen) scale, then a header row, then
- * one row per check-in. Times are epoch milliseconds; tags are joined with ';'. Fields that
- * contain a comma, quote, or newline are quoted with embedded quotes doubled (RFC 4180).
+ * Rectangular output (header row + one row per check-in, all with the same column count) so it
+ * loads cleanly in spreadsheets *and* strict parsers like pandas. The scale is documented in the
+ * axis column headers themselves. Times are epoch milliseconds; tags are sorted and joined with
+ * ';'. RFC-4180 escaping (comma/quote/CR/LF), plus a leading-character guard so a comment/tag
+ * can't act as a spreadsheet formula (CSV injection).
  */
 object CsvExporter {
 
-    val HEADER = listOf("prompt_time", "answered_time", "mood", "energy", "anxiety", "comment", "tags")
+    fun header(): List<String> = listOf(
+        "prompt_time",
+        "answered_time",
+        axisHeader("mood"),
+        axisHeader("energy"),
+        axisHeader("anxiety"),
+        "comment",
+        "tags",
+    )
 
     fun toCsv(rows: List<CheckinWithTags>): String {
         val out = StringBuilder()
-        out.append(escape(legend())).append('\n')
-        out.append(HEADER.joinToString(",")).append('\n')
+        out.append(header().joinToString(",") { escape(it) }).append('\n')
         for (row in rows) {
             val c = row.checkin
             val fields = listOf(
@@ -27,20 +36,23 @@ object CsvExporter {
                 c.energy.toString(),
                 c.anxiety.toString(),
                 c.comment.orEmpty(),
-                row.tags.joinToString(";") { it.label },
+                row.tags.map { it.label }.sorted().joinToString(";"),
             )
-            out.append(fields.joinToString(",") { escape(it) }).append('\n')
+            out.append(fields.joinToString(",") { sanitize(it) }).append('\n')
         }
         return out.toString()
     }
 
-    private fun legend(): String {
-        val axes = ScaleSchema.axes.entries.joinToString("; ") { (axis, anchors) ->
-            "$axis ${anchors.first}..${anchors.second}"
-        }
-        return "Baromi export (scale v${ScaleSchema.VERSION}): all axes ${ScaleSchema.MIN}.." +
-            "${ScaleSchema.MAX}, higher is better ($axes). Times are epoch milliseconds."
+    private fun axisHeader(axis: String): String {
+        val (low, high) = ScaleSchema.axes.getValue(axis)
+        return "$axis (${ScaleSchema.MIN}=$low..${ScaleSchema.MAX}=$high; higher is better)"
     }
+
+    /** RFC-4180 escaping after neutralizing a leading formula trigger. */
+    private fun sanitize(field: String): String = escape(guardFormula(field))
+
+    private fun guardFormula(field: String): String =
+        if (field.isNotEmpty() && field[0] in FORMULA_TRIGGERS) "'$field" else field
 
     private fun escape(field: String): String =
         if (field.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
@@ -48,4 +60,6 @@ object CsvExporter {
         } else {
             field
         }
+
+    private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@', '\t', '\r')
 }

@@ -15,4 +15,5 @@
     <string name="save_checkin">Save check-in</string>
     <string name="saved_confirmation">Check-in saved</string>
     <string name="menu_export">Export CSV</string>
+    <string name="export_failed">Export failed</string>
 </resources>

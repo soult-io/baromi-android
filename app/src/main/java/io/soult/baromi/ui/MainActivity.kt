@@ -30,6 +30,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 /**
  * The check-in screen (Module B). Opened from the launcher or a reminder notification; records
@@ -145,14 +146,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun exportCsv() {
         lifecycleScope.launch {
-            val csv = exporter.exportCsv()
-            val uri = withContext(Dispatchers.IO) { writeCsvToCache(csv) }
-            shareCsv(uri)
+            try {
+                // Serialize + write off the main thread; surface failures instead of crashing.
+                val uri = withContext(Dispatchers.IO) { writeCsvToCache(exporter.exportCsv()) }
+                shareCsv(uri)
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, R.string.export_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun writeCsvToCache(csv: String): Uri {
-        val dir = File(cacheDir, "exports").apply { mkdirs() }
+        val dir = File(cacheDir, "exports")
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw IOException("could not create export directory: $dir")
+        }
         val file = File(dir, "baromi-export.csv")
         file.writeText(csv)
         return FileProvider.getUriForFile(this, "$packageName.fileprovider", file)

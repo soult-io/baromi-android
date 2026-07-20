@@ -33,8 +33,8 @@ class CheckinExporterTest {
     fun teardown() = db.close()
 
     @Test
-    fun empty_record_exports_legend_and_header_only() = runTest {
-        assertEquals(2, exporter.exportCsv().trimEnd('\n').split("\n").size)
+    fun empty_record_exports_header_only() = runTest {
+        assertEquals(1, exporter.exportCsv().trimEnd('\n').split("\n").size)
     }
 
     @Test
@@ -42,8 +42,8 @@ class CheckinExporterTest {
         db.checkinDao().insert(Checkin(promptTime = null, answeredTime = 100L, mood = 1, energy = 2, anxiety = 3, comment = "older"))
         db.checkinDao().insert(Checkin(promptTime = null, answeredTime = 200L, mood = 4, energy = 5, anxiety = 1, comment = "newer"))
         val out = exporter.exportCsv().trimEnd('\n').split("\n")
-        assertEquals(4, out.size) // legend + header + 2 rows
-        assertTrue("newest first", out[2].contains(",4,5,1,newer,"))
-        assertTrue(out[3].contains(",1,2,3,older,"))
+        assertEquals(3, out.size) // header + 2 rows
+        assertTrue("newest first", out[1].contains(",4,5,1,newer,"))
+        assertTrue(out[2].contains(",1,2,3,older,"))
     }
 }

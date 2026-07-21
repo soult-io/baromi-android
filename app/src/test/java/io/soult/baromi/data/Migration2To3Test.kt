@@ -85,7 +85,9 @@ class Migration2To3Test {
                 "INSERT INTO `checkin` (`id`, `prompt_time`, `answered_time`, `mood`, `energy`, `anxiety`, `comment`, `locked`) " +
                     "VALUES (2, NULL, 3000, 2, 4, 1, NULL, 1)",
             )
-            db.execSQL("INSERT INTO `tag` (`id`, `label`) VALUES (1, 'work'), (2, 'social')")
+            // Neutral labels (not in the pared-defaults reconcile set) so MIGRATION_3_4 leaves them
+            // alone and this test stays focused on the 2->3 backfill.
+            db.execSQL("INSERT INTO `tag` (`id`, `label`) VALUES (1, 'client-x'), (2, 'journal')")
             db.execSQL("INSERT INTO `checkin_tag` (`checkin_id`, `tag_id`) VALUES (1, 1), (1, 2)")
             db.execSQL("INSERT INTO `reminder_time` (`id`, `hour`, `minute`) VALUES (1, 9, 0)")
 
@@ -97,7 +99,9 @@ class Migration2To3Test {
 
     private fun openMigrated(): BaromiDatabase =
         Room.databaseBuilder(ctx, BaromiDatabase::class.java, TEST_DB)
-            .addMigrations(MIGRATION_2_3)
+            // Room targets the current version (4), so both steps run; MIGRATION_3_4 is data-only
+            // and touches only the pared-default tag labels, which this test deliberately avoids.
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
             .allowMainThreadQueries()
             .build()
 
@@ -128,7 +132,7 @@ class Migration2To3Test {
                 one.values.associate { it.categoryId to it.value },
             )
             // Tag links survive.
-            assertEquals(setOf("work", "social"), one.tags.map { it.label }.toSet())
+            assertEquals(setOf("client-x", "journal"), one.tags.map { it.label }.toSet())
 
             // Check-in 2: null prompt_time and locked survive; values backfilled.
             val two = db.checkinDao().getWithDetails(2)!!
@@ -139,11 +143,16 @@ class Migration2To3Test {
                 two.values.associate { it.categoryId to it.value },
             )
 
-            // Migrated tags are custom + enabled (not silently promoted to built-in).
-            val tags = db.tagDao().getAll().sortedBy { it.id }
-            assertEquals(listOf("work", "social"), tags.map { it.label })
-            assertEquals(listOf(false, false), tags.map { it.builtin })
-            assertEquals(listOf(true, true), tags.map { it.enabled })
+            // The user's own tags survive as custom + enabled; MIGRATION_3_4 also established the
+            // pared built-in default set alongside them.
+            val tags = db.tagDao().getAll()
+            val custom = tags.filter { !it.builtin }.sortedBy { it.id }
+            assertEquals(listOf("client-x", "journal"), custom.map { it.label })
+            assertEquals(listOf(true, true), custom.map { it.enabled })
+            assertEquals(
+                setOf("poor sleep", "exercise", "social"),
+                tags.filter { it.builtin }.map { it.label }.toSet(),
+            )
 
             // Reminder untouched.
             assertEquals(1, db.reminderTimeDao().getAll().size)

@@ -11,12 +11,11 @@
         android:orientation="vertical"
         android:padding="24dp">
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:text="@string/checkin_title" android:textAppearance="?attr/textAppearanceHeadlineSmall" />
-        <TextView android:id="@+id/captionMood" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" />
-        <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleMood" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:layout_marginBottom="16dp" app:selectionRequired="false" app:singleSelection="true" />
-        <TextView android:id="@+id/captionEnergy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" />
-        <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleEnergy" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:layout_marginBottom="16dp" app:selectionRequired="false" app:singleSelection="true" />
-        <TextView android:id="@+id/captionAnxiety" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" />
-        <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleAnxiety" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:layout_marginBottom="16dp" app:selectionRequired="false" app:singleSelection="true" />
+        <LinearLayout
+            android:id="@+id/categoriesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
         <com.google.android.material.textfield.TextInputLayout android:id="@+id/commentLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/comment_hint" app:counterEnabled="true" app:counterMaxLength="500">
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/inputComment" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textMultiLine|textCapSentences" android:maxLength="500" />
         </com.google.android.material.textfield.TextInputLayout>

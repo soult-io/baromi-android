@@ -28,8 +28,10 @@ class HistoryFragment : Fragment() {
         b.historyList.layoutManager = LinearLayoutManager(requireContext())
         b.historyList.adapter = adapter
         viewLifecycleOwner.lifecycleScope.launch {
-            val items = BaromiDatabase.getInstance(requireContext().applicationContext).checkinDao().getAllWithTags()
-            adapter.submit(items)
+            val db = BaromiDatabase.getInstance(requireContext().applicationContext)
+            val items = db.checkinDao().getAllWithDetails()
+            val categories = db.categoryDao().getAll()
+            adapter.submit(items, categories)
             val empty = items.isEmpty()
             b.emptyState.visibility = if (empty) View.VISIBLE else View.GONE
             b.historyList.visibility = if (empty) View.GONE else View.VISIBLE

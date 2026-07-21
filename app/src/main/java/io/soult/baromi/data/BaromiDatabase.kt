@@ -9,19 +9,29 @@ import io.soult.baromi.BuildConfig
 /**
  * The on-device store.
  *
- * v2 adds the reminder_time table. exportSchema is off until migrations begin. Destructive
- * fallback is DEBUG-only: while unreleased we drop-and-recreate on version bumps, but a release
- * build must never silently wipe the record — it will fail loudly until a real migration exists.
+ * v3 replaces the fixed mood/energy/anxiety columns with a flexible category model: a `category`
+ * table plus one `checkin_value` row per enabled category. exportSchema is off until migrations
+ * begin. Destructive fallback is DEBUG-only: while unreleased we drop-and-recreate on version
+ * bumps, but a release build must never silently wipe the record — it will fail loudly until a
+ * real migration exists.
  */
 @Database(
-    entities = [Checkin::class, Tag::class, CheckinTag::class, ReminderTime::class],
-    version = 2,
+    entities = [
+        Checkin::class,
+        Tag::class,
+        CheckinTag::class,
+        ReminderTime::class,
+        Category::class,
+        CheckinValue::class,
+    ],
+    version = 3,
     exportSchema = false,
 )
 abstract class BaromiDatabase : RoomDatabase() {
     abstract fun checkinDao(): CheckinDao
     abstract fun tagDao(): TagDao
     abstract fun reminderTimeDao(): ReminderTimeDao
+    abstract fun categoryDao(): CategoryDao
 
     companion object {
         const val NAME = "baromi.db"

@@ -3,49 +3,22 @@ package io.soult.baromi.data
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-/** Pure JVM tests of the [Checkin] construction guards. No Android runtime needed. */
+/** Pure JVM tests of the [Checkin] and [CheckinValue] construction guards. No Android runtime needed. */
 class CheckinValidationTest {
 
     private fun checkin(
-        mood: Int = 3,
-        energy: Int = 3,
-        anxiety: Int = 3,
         comment: String? = null,
         answeredTime: Long = 1L,
     ) = Checkin(
         promptTime = null,
         answeredTime = answeredTime,
-        mood = mood,
-        energy = energy,
-        anxiety = anxiety,
         comment = comment,
     )
 
     @Test
     fun valid_checkin_constructs() {
-        val c = checkin(mood = 1, energy = 5, anxiety = 3, comment = "fine")
-        // No exception; fields retained.
-        assert(c.mood == 1 && c.energy == 5 && c.anxiety == 3)
-    }
-
-    @Test
-    fun mood_above_range_rejected() {
-        assertThrows(IllegalArgumentException::class.java) { checkin(mood = 6) }
-    }
-
-    @Test
-    fun mood_below_range_rejected() {
-        assertThrows(IllegalArgumentException::class.java) { checkin(mood = 0) }
-    }
-
-    @Test
-    fun energy_out_of_range_rejected() {
-        assertThrows(IllegalArgumentException::class.java) { checkin(energy = 6) }
-    }
-
-    @Test
-    fun anxiety_out_of_range_rejected() {
-        assertThrows(IllegalArgumentException::class.java) { checkin(anxiety = 0) }
+        val c = checkin(comment = "fine")
+        assert(c.comment == "fine")
     }
 
     @Test
@@ -64,5 +37,32 @@ class CheckinValidationTest {
     @Test
     fun unset_answered_time_rejected() {
         assertThrows(IllegalArgumentException::class.java) { checkin(answeredTime = 0L) }
+    }
+
+    @Test
+    fun value_in_range_constructs() {
+        val v = CheckinValue(checkinId = 1L, categoryId = 2L, value = 3)
+        assert(v.value == 3)
+    }
+
+    @Test
+    fun value_below_range_rejected() {
+        assertThrows(IllegalArgumentException::class.java) {
+            CheckinValue(checkinId = 1L, categoryId = 2L, value = 0)
+        }
+    }
+
+    @Test
+    fun value_above_range_rejected() {
+        assertThrows(IllegalArgumentException::class.java) {
+            CheckinValue(checkinId = 1L, categoryId = 2L, value = 6)
+        }
+    }
+
+    @Test
+    fun blank_category_name_rejected() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Category(key = null, name = "  ", builtin = false, position = 0)
+        }
     }
 }

@@ -21,6 +21,7 @@ class BaromiDatabaseTest {
     private lateinit var db: BaromiDatabase
     private lateinit var checkinDao: CheckinDao
     private lateinit var tagDao: TagDao
+    private lateinit var categoryDao: CategoryDao
 
     @Before
     fun setup() {
@@ -30,6 +31,7 @@ class BaromiDatabaseTest {
             .build()
         checkinDao = db.checkinDao()
         tagDao = db.tagDao()
+        categoryDao = db.categoryDao()
     }
 
     @After
@@ -38,53 +40,78 @@ class BaromiDatabaseTest {
     }
 
     private fun checkin(
-        mood: Int = 3,
-        energy: Int = 3,
-        anxiety: Int = 3,
         comment: String? = null,
         promptTime: Long? = null,
         answeredTime: Long = 10L,
     ) = Checkin(
         promptTime = promptTime,
         answeredTime = answeredTime,
-        mood = mood,
-        energy = energy,
-        anxiety = anxiety,
         comment = comment,
     )
 
     @Test
     fun checkin_roundtrips() = runTest {
-        val id = checkinDao.insert(
-            checkin(mood = 4, energy = 3, anxiety = 5, comment = "ok", promptTime = 1000L, answeredTime = 2000L),
-        )
+        val id = checkinDao.insert(checkin(comment = "ok", promptTime = 1000L, answeredTime = 2000L))
         val read = checkinDao.getById(id)!!
         assertEquals(1000L, read.promptTime)
         assertEquals(2000L, read.answeredTime)
-        assertEquals(4, read.mood)
-        assertEquals(3, read.energy)
-        assertEquals(5, read.anxiety)
         assertEquals("ok", read.comment)
         assertEquals(false, read.locked)
     }
 
     @Test
+    fun values_attach_and_resolve() = runTest {
+        val mood = categoryDao.insert(Category(key = "mood", name = "Mood", builtin = true, position = 0))
+        val energy = categoryDao.insert(Category(key = "energy", name = "Energy", builtin = true, position = 1))
+        val cid = checkinDao.insert(checkin())
+        checkinDao.insertValue(CheckinValue(cid, mood, 4))
+        checkinDao.insertValue(CheckinValue(cid, energy, 2))
+
+        val details = checkinDao.getWithDetails(cid)!!
+        assertEquals(mapOf(mood to 4, energy to 2), details.values.associate { it.categoryId to it.value })
+    }
+
+    @Test
     fun boundary_extremes_roundtrip() = runTest {
-        // Min and max on each axis, plus a max-length comment, survive a DB round-trip
-        // (guards run on the cursor read too, so this proves the extremes are valid).
+        val cat = categoryDao.insert(Category(key = "mood", name = "Mood", builtin = true, position = 0))
         val maxComment = "x".repeat(Checkin.COMMENT_MAX_LEN)
-        val id = checkinDao.insert(checkin(mood = 5, energy = 1, anxiety = 5, comment = maxComment))
-        val read = checkinDao.getById(id)!!
-        assertEquals(5, read.mood)
-        assertEquals(1, read.energy)
-        assertEquals(5, read.anxiety)
+        val cid = checkinDao.insert(checkin(comment = maxComment))
+        checkinDao.insertValue(CheckinValue(cid, cat, 1))
+        checkinDao.insertValue(CheckinValue(checkinDao.insert(checkin(answeredTime = 11L)), cat, 5))
+
+        val read = checkinDao.getById(cid)!!
         assertEquals(Checkin.COMMENT_MAX_LEN, read.comment!!.length)
+        assertEquals(1, checkinDao.getWithDetails(cid)!!.values.single().value)
     }
 
     @Test
     fun null_prompt_time_persists() = runTest {
         val id = checkinDao.insert(checkin(promptTime = null))
         assertNull(checkinDao.getById(id)!!.promptTime)
+    }
+
+    @Test
+    fun deleting_checkin_cascades_values() = runTest {
+        val cat = categoryDao.insert(Category(key = "mood", name = "Mood", builtin = true, position = 0))
+        val cid = checkinDao.insert(checkin())
+        checkinDao.insertValue(CheckinValue(cid, cat, 3))
+
+        checkinDao.delete(checkinDao.getById(cid)!!)
+
+        assertNull(checkinDao.getWithDetails(cid))
+        assertEquals("category itself should remain", 1, categoryDao.getAll().size)
+    }
+
+    @Test
+    fun deleting_category_cascades_values() = runTest {
+        val cat = Category(id = 0, key = null, name = "Custom", builtin = false, position = 3)
+        val catId = categoryDao.insert(cat)
+        val cid = checkinDao.insert(checkin())
+        checkinDao.insertValue(CheckinValue(cid, catId, 3))
+
+        categoryDao.delete(cat.copy(id = catId))
+
+        assertTrue("value should cascade away", checkinDao.getWithDetails(cid)!!.values.isEmpty())
     }
 
     @Test
@@ -95,8 +122,8 @@ class BaromiDatabaseTest {
         checkinDao.attachTag(CheckinTag(cid, work))
         checkinDao.attachTag(CheckinTag(cid, social))
 
-        val withTags = checkinDao.getWithTags(cid)!!
-        assertEquals(setOf("work", "social"), withTags.tags.map { it.label }.toSet())
+        val details = checkinDao.getWithDetails(cid)!!
+        assertEquals(setOf("work", "social"), details.tags.map { it.label }.toSet())
     }
 
     @Test
@@ -106,20 +133,6 @@ class BaromiDatabaseTest {
         checkinDao.attachTag(CheckinTag(cid, work))
         checkinDao.attachTag(CheckinTag(cid, work)) // must not throw on the composite-PK conflict
         assertEquals(1, checkinDao.countTagLinks())
-    }
-
-    @Test
-    fun deleting_checkin_cascades_links_but_keeps_tags() = runTest {
-        val cid = checkinDao.insert(checkin())
-        val work = tagDao.insert(Tag(label = "work"))
-        checkinDao.attachTag(CheckinTag(cid, work))
-        assertEquals(1, checkinDao.countTagLinks())
-
-        checkinDao.delete(checkinDao.getById(cid)!!)
-
-        assertNull(checkinDao.getWithTags(cid))
-        assertEquals("link row should cascade away", 0, checkinDao.countTagLinks())
-        assertEquals("tag itself should remain", 1, tagDao.getAll().size)
     }
 
     @Test
@@ -145,6 +158,14 @@ class BaromiDatabaseTest {
         val second = tagDao.insert(Tag(label = "work"))
         assertEquals("duplicate insert is a no-op returning -1", -1L, second)
         assertEquals("unique label index keeps a single row", 1, tagDao.getAll().size)
+    }
+
+    @Test
+    fun duplicate_category_name_is_ignored() = runTest {
+        categoryDao.insert(Category(key = null, name = "Focus", builtin = false, position = 3))
+        val second = categoryDao.insert(Category(key = null, name = "Focus", builtin = false, position = 4))
+        assertEquals("duplicate insert is a no-op returning -1", -1L, second)
+        assertEquals(1, categoryDao.getAll().size)
     }
 
     @Test

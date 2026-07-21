@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -56,8 +57,8 @@ class SettingsE2ETest {
             onView(withText("Reminder times")).check(matches(isDisplayed()))
         }
 
-        onView(withId(R.id.inputNewTag)).perform(typeText("e2etag"), closeSoftKeyboard())
-        onView(withId(R.id.buttonAddTag)).perform(click())
+        onView(withId(R.id.inputNewTag)).perform(scrollTo(), typeText("e2etag"), closeSoftKeyboard())
+        onView(withId(R.id.buttonAddTag)).perform(scrollTo(), click())
         Waits.waitUntil {
             onView(withText("e2etag")).check(matches(isDisplayed()))
         }

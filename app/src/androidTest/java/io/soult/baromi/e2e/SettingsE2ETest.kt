@@ -15,6 +15,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import io.soult.baromi.R
@@ -24,6 +25,7 @@ import io.soult.baromi.ui.MainActivity
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.containsString
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +44,8 @@ class SettingsE2ETest {
         AlarmScheduler.canScheduleExactOverride = true
         val ctx = ApplicationProvider.getApplicationContext<Context>()
         ctx.getSharedPreferences("baromi_prefs", Context.MODE_PRIVATE)
-            .edit().putBoolean("onboarded", true).commit()
+            .edit().putBoolean("onboarded", true).remove("night_mode").commit()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         BaromiDatabase.getInstance(ctx).clearAllTables()
         scenario = ActivityScenario.launch(MainActivity::class.java)
     }
@@ -51,6 +54,8 @@ class SettingsE2ETest {
     fun tearDown() {
         scenario.close()
         AlarmScheduler.canScheduleExactOverride = null
+        // Night mode is global process state — reset it so it can't leak into other tests.
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
     }
 
     @Test
@@ -95,6 +100,18 @@ class SettingsE2ETest {
         onView(allOf(withText("Disable"), hasSibling(withText("Anxiety"))))
             .perform(scrollTo())
             .check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun theme_toggle_switches_to_dark() {
+        onView(withId(R.id.action_settings)).perform(click())
+        Waits.waitUntil {
+            onView(withText("Appearance")).check(matches(isDisplayed()))
+        }
+        onView(withId(R.id.themeDark)).perform(scrollTo(), click())
+        Waits.waitUntil {
+            assertEquals(AppCompatDelegate.MODE_NIGHT_YES, AppCompatDelegate.getDefaultNightMode())
+        }
     }
 
     /** Clicks the Disable button in the given category's row and waits for the row to flip to Enable. */

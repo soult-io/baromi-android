@@ -7,6 +7,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -55,6 +56,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonAddCategory.setOnClickListener { addCategory() }
         binding.buttonAddTag.setOnClickListener { addTag() }
         binding.buttonGrantPermissions.setOnClickListener { grantPermissions() }
+        setupThemeToggle()
 
         // Re-attach the result listener if a picker dialog survived a configuration change.
         (supportFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker)
@@ -89,6 +91,26 @@ class SettingsActivity : AppCompatActivity() {
     private fun grantPermissions() {
         ReminderPermissions.requestNotificationPermissionIfNeeded(this)
         ReminderPermissions.promptForExactAlarmIfNeeded(this)
+    }
+
+    private fun setupThemeToggle() {
+        val checkedId = when (ThemePreferences.load(this)) {
+            AppCompatDelegate.MODE_NIGHT_NO -> R.id.themeLight
+            AppCompatDelegate.MODE_NIGHT_YES -> R.id.themeDark
+            else -> R.id.themeSystem
+        }
+        binding.themeToggle.check(checkedId)
+        // Listener added after check() so the initial state doesn't trigger a mode change; the
+        // guard makes a redundant re-selection a no-op. Changing the mode recreates the activity.
+        binding.themeToggle.addOnButtonCheckedListener { _, id, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val mode = when (id) {
+                R.id.themeLight -> AppCompatDelegate.MODE_NIGHT_NO
+                R.id.themeDark -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+            if (mode != ThemePreferences.load(this)) ThemePreferences.set(this, mode)
+        }
     }
 
     private fun renderReminders() {

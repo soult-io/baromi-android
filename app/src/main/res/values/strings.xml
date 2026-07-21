@@ -15,6 +15,10 @@
     <string name="export_failed">Export failed</string>
     <string name="action_settings">Settings</string>
     <string name="settings_title">Settings</string>
+    <string name="appearance_header">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="reminders_header">Reminder times</string>
     <string name="add_reminder_time">Add reminder time</string>
     <string name="new_tag_hint">New tag</string>

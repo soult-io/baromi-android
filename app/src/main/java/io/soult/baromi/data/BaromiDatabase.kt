@@ -10,10 +10,14 @@ import io.soult.baromi.BuildConfig
  * The on-device store.
  *
  * v3 replaces the fixed mood/energy/anxiety columns with a flexible category model: a `category`
- * table plus one `checkin_value` row per enabled category. exportSchema is off until migrations
- * begin. Destructive fallback is DEBUG-only: while unreleased we drop-and-recreate on version
- * bumps, but a release build must never silently wipe the record — it will fail loudly until a
- * real migration exists.
+ * table plus one `checkin_value` row per enabled category. [MIGRATION_2_3] carries an existing v2
+ * database forward (backfilling values from the old columns). The DEBUG-only destructive fallback
+ * stays as a backstop — a release build has a real migration and never silently wipes the record.
+ *
+ * exportSchema is still off: enabling it is only worthwhile once the generated JSON baseline is
+ * committed, which needs a build environment that surfaces `app/schemas/` (the container build host
+ * does not). Until then the migration is validated by Room's own runtime schema check, which the
+ * Robolectric migration test exercises against a real v2 database.
  */
 @Database(
     entities = [
@@ -46,6 +50,7 @@ abstract class BaromiDatabase : RoomDatabase() {
                     BaromiDatabase::class.java,
                     NAME,
                 )
+                    .addMigrations(MIGRATION_2_3)
                     .apply {
                         if (BuildConfig.DEBUG) {
                             fallbackToDestructiveMigration(dropAllTables = true)

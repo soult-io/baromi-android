@@ -129,4 +129,32 @@ class CategoryRepositoryTest {
         // A disabled category can't be "the last enabled"; deleting it never empties the enabled set.
         assertFalse(repo.isLastEnabled(target.copy(enabled = false)))
     }
+
+    @Test
+    fun disable_unless_last_blocks_the_final_enabled_category() = runTest {
+        repo.seedDefaultsIfEmpty()
+        val all = repo.all()
+        assertTrue(repo.disableUnlessLast(all[0])) // 3 -> 2 enabled
+        assertTrue(repo.disableUnlessLast(all[1])) // 2 -> 1 enabled
+        assertFalse("the last enabled category cannot be disabled", repo.disableUnlessLast(all[2]))
+        assertEquals("one category stays enabled", 1, repo.enabled().size)
+    }
+
+    @Test
+    fun remove_unless_last_blocks_the_final_enabled_category() = runTest {
+        repo.seedDefaultsIfEmpty()
+        repo.add("Only")
+        val builtins = repo.all().filter { it.builtin }
+        val custom = repo.all().first { !it.builtin }
+        builtins.forEach { repo.setEnabled(it, false) }
+
+        // Custom "Only" is now the sole enabled category — deleting it is blocked.
+        assertFalse(repo.removeUnlessLast(repo.all().first { !it.builtin }))
+        assertTrue(repo.all().any { it.name == "Only" })
+
+        // Re-enable a built-in, and the custom can be removed.
+        repo.setEnabled(builtins.first(), true)
+        assertTrue(repo.removeUnlessLast(custom))
+        assertFalse(repo.all().any { it.name == "Only" })
+    }
 }

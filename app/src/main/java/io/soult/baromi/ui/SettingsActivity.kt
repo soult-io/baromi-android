@@ -202,25 +202,22 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setCategoryEnabled(category: Category, enabled: Boolean) {
         lifecycleScope.launch {
-            // Disabling the only enabled category would leave nothing to rate on a check-in.
-            if (!enabled && categories.isLastEnabled(category)) {
-                showLastCategoryAlert()
-                return@launch
+            // Enabling is always safe; disabling the only enabled category would leave nothing to
+            // rate on a check-in, so it's blocked atomically (guards against a rapid double-tap).
+            val ok = if (enabled) {
+                categories.setEnabled(category, true)
+                true
+            } else {
+                categories.disableUnlessLast(category)
             }
-            categories.setEnabled(category, enabled)
-            renderCategories()
+            if (ok) renderCategories() else showLastCategoryAlert()
         }
     }
 
     private fun removeCategory(category: Category) {
         lifecycleScope.launch {
             // Deleting the only enabled category would leave nothing to rate on a check-in.
-            if (categories.isLastEnabled(category)) {
-                showLastCategoryAlert()
-                return@launch
-            }
-            categories.remove(category)
-            renderCategories()
+            if (categories.removeUnlessLast(category)) renderCategories() else showLastCategoryAlert()
         }
     }
 

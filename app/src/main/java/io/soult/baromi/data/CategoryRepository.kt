@@ -1,6 +1,8 @@
 package io.soult.baromi.data
 
 import android.database.sqlite.SQLiteConstraintException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Reads and manages the category list; seeds the built-ins on first run. Built-in categories
@@ -10,6 +12,10 @@ import android.database.sqlite.SQLiteConstraintException
 class CategoryRepository(private val dao: CategoryDao) {
 
     enum class AddResult { ADDED, DUPLICATE, INVALID, MAX_REACHED }
+
+    // Serializes the "last enabled" guard with its mutation so two rapid taps can't both pass the
+    // check before either write commits and leave the enabled set empty (a TOCTOU race).
+    private val guard = Mutex()
 
     suspend fun seedDefaultsIfEmpty() {
         if (dao.count() == 0) {
@@ -28,6 +34,27 @@ class CategoryRepository(private val dao: CategoryDao) {
      */
     suspend fun isLastEnabled(category: Category): Boolean =
         category.enabled && dao.enabledCount() <= 1
+
+    /**
+     * Atomically disables [category] unless it is the last enabled one. Returns false (nothing
+     * changed) when it was the last — the caller should surface the "keep at least one" alert.
+     */
+    suspend fun disableUnlessLast(category: Category): Boolean = guard.withLock {
+        if (isLastEnabled(category)) return@withLock false
+        dao.update(category.copy(enabled = false))
+        true
+    }
+
+    /**
+     * Atomically removes a custom [category] unless it is the last enabled one. Returns false
+     * (nothing changed) when it was the last. Only wired to custom categories (built-ins have no
+     * delete affordance), so a false return always means "blocked as the last enabled category".
+     */
+    suspend fun removeUnlessLast(category: Category): Boolean = guard.withLock {
+        if (isLastEnabled(category)) return@withLock false
+        dao.delete(category) // custom only; deleting cascades its historical values away
+        true
+    }
 
     /** Adds a custom category. Rejects blank names and names containing ',' (the CSV column separator). */
     suspend fun add(name: String): AddResult {

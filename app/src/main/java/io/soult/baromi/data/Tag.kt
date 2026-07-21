@@ -23,7 +23,11 @@ data class Tag(
     }
 
     companion object {
-        /** Seeded on first run; disable-only. */
+        /**
+         * Seeded on first run; disable-only. Changing this set needs a new migration (see
+         * `MIGRATION_3_4`) to reconcile existing databases — do not edit an old migration, which
+         * keeps a frozen copy of the labels it retired/established and may diverge from this list.
+         */
         val DEFAULTS = listOf("poor sleep", "exercise", "social")
             .map { Tag(label = it, builtin = true, enabled = true) }
     }

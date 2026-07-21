@@ -95,9 +95,16 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
  * three built-ins `poor sleep, exercise, social`. [MIGRATION_2_3] preserved every old tag as a
  * *custom* row, so a database that predates the pared set still shows the old six. This retires the
  * dropped defaults (and their check-in links — FK enforcement is off during a migration), then marks
- * the current three as built-in (creating any that are missing). Tags the user added themselves are
- * left untouched; only the app's own former defaults are removed. Room still requires a version bump
+ * the current three as built-in (creating any that are missing). Room still requires a version bump
  * to run DML like this, so the schema is identical to v3 — `4.json`'s shape matches `3.json`.
+ *
+ * Retirement is by label, which is a deliberate, bounded trade-off: it cannot run only in the v2->v3
+ * step (already-migrated v3 databases must still be fixed here), and a tag row carries no provenance
+ * distinguishing a former default from a user-created tag of the same name. So on the intended
+ * v2->v3->v4 path — where these four labels are always the old defaults — nothing user-made is lost;
+ * the only exception is a database first created at v3 in which the user happened to add a custom tag
+ * named exactly `work`/`sleep-poor`/`sick`/`alone`, which would be removed (the check-ins survive,
+ * only the tag link is dropped). Accepted as vanishingly unlikely for this app.
  */
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {

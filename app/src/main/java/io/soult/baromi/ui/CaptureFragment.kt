@@ -44,6 +44,11 @@ class CaptureFragment : Fragment() {
     private val selected = mutableMapOf<Long, Int>()
     private var loaded = false
 
+    // Signature of the last-rendered enabled category + tag set. onResume re-reads these (they can
+    // change while the user is in Settings); we only rebuild the form when the set actually changed,
+    // so an incidental resume doesn't wipe a half-finished check-in.
+    private var renderedSignature: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         promptTime = (arguments?.getLong(ARG_PROMPT_TIME, 0L) ?: 0L).takeIf { it > 0L }
@@ -58,8 +63,14 @@ class CaptureFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = binding ?: return
         updateSaveEnabled()
-        loadCategoriesAndTags()
         b.buttonSave.setOnClickListener { save() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-read categories/tags here (not just onViewCreated) so a category or tag added or
+        // toggled in Settings is reflected when the user returns to this screen.
+        reload()
     }
 
     override fun onDestroyView() {
@@ -67,13 +78,23 @@ class CaptureFragment : Fragment() {
         binding = null
     }
 
-    private fun loadCategoriesAndTags() {
+    private fun reload() {
         viewLifecycleOwner.lifecycleScope.launch {
             categoryRepository.seedDefaultsIfEmpty()
             tagRepository.seedDefaultsIfEmpty()
             val cats = categoryRepository.enabled()
             val tags = tagRepository.enabled()
             val b = binding ?: return@launch
+
+            val signature = cats.joinToString(",") { "c${it.id}:${it.name}" } +
+                "|" + tags.joinToString(",") { "t${it.id}:${it.label}" }
+            if (loaded && signature == renderedSignature) return@launch // unchanged; keep in-progress entry
+            renderedSignature = signature
+
+            b.categoriesContainer.removeAllViews()
+            b.chipGroupTags.removeAllViews()
+            selected.clear()
+            loaded = false
             categories = cats
             cats.forEach { addCategoryRow(b.categoriesContainer, it) }
             tags.forEach { tag ->

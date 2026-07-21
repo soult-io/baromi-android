@@ -6,6 +6,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
@@ -64,5 +66,18 @@ class CaptureE2ETest {
         Waits.waitUntil {
             onView(withText(containsString("Mood 5"))).check(matches(isDisplayed()))
         }
+    }
+
+    @Test
+    fun fresh_install_seeds_the_pared_default_tags() {
+        // A fresh (cleared) DB must seed exactly the three pared defaults, not the old six.
+        Waits.waitUntil {
+            onView(withText("poor sleep")).perform(scrollTo()).check(matches(isDisplayed()))
+        }
+        onView(withText("exercise")).perform(scrollTo()).check(matches(isDisplayed()))
+        onView(withText("social")).perform(scrollTo()).check(matches(isDisplayed()))
+        // Retired defaults must not appear.
+        onView(withText("work")).check(doesNotExist())
+        onView(withText("sick")).check(doesNotExist())
     }
 }

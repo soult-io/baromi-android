@@ -14,12 +14,14 @@ import io.soult.baromi.BuildConfig
  * database forward (backfilling values from the old columns). The DEBUG-only destructive fallback
  * stays as a backstop — a release build has a real migration and never silently wipes the record.
  *
+ * v4 is a data-only reconciliation ([MIGRATION_3_4]) that pares the seeded default tags to the
+ * current three built-ins; its schema is identical to v3.
+ *
  * exportSchema is on. Room writes the generated schema for each version to `app/schemas/`
- * (location set by the `room.schemaLocation` KSP arg in build.gradle.kts); the version-3 baseline
- * `app/schemas/io.soult.baromi.data.BaromiDatabase/3.json` is committed. That committed baseline is
- * the record of the current on-disk schema — the next migration is written against it. The
- * Robolectric migration test still exercises Room's own runtime schema check against a real v2
- * database.
+ * (location set by the `room.schemaLocation` KSP arg in build.gradle.kts); the version baselines
+ * under `app/schemas/io.soult.baromi.data.BaromiDatabase/` are committed. Those committed baselines
+ * are the record of the on-disk schema — the next migration is written against the latest. The
+ * Robolectric migration tests still exercise Room's own runtime schema check against real databases.
  */
 @Database(
     entities = [
@@ -30,7 +32,7 @@ import io.soult.baromi.BuildConfig
         Category::class,
         CheckinValue::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class BaromiDatabase : RoomDatabase() {
@@ -52,7 +54,7 @@ abstract class BaromiDatabase : RoomDatabase() {
                     BaromiDatabase::class.java,
                     NAME,
                 )
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .apply {
                         if (BuildConfig.DEBUG) {
                             fallbackToDestructiveMigration(dropAllTables = true)

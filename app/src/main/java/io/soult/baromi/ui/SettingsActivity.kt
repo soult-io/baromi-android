@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import io.soult.baromi.R
@@ -201,16 +202,31 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setCategoryEnabled(category: Category, enabled: Boolean) {
         lifecycleScope.launch {
-            categories.setEnabled(category, enabled)
-            renderCategories()
+            // Enabling is always safe; disabling the only enabled category would leave nothing to
+            // rate on a check-in, so it's blocked atomically (guards against a rapid double-tap).
+            val ok = if (enabled) {
+                categories.setEnabled(category, true)
+                true
+            } else {
+                categories.disableUnlessLast(category)
+            }
+            if (ok) renderCategories() else showLastCategoryAlert()
         }
     }
 
     private fun removeCategory(category: Category) {
         lifecycleScope.launch {
-            categories.remove(category)
-            renderCategories()
+            // Deleting the only enabled category would leave nothing to rate on a check-in.
+            if (categories.removeUnlessLast(category)) renderCategories() else showLastCategoryAlert()
         }
+    }
+
+    private fun showLastCategoryAlert() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.category_min_title)
+            .setMessage(R.string.category_min_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun addTag() {

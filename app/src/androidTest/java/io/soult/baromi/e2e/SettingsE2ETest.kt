@@ -17,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
@@ -45,7 +46,7 @@ class SettingsE2ETest {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
         ctx.getSharedPreferences("baromi_prefs", Context.MODE_PRIVATE)
             .edit().putBoolean("onboarded", true).remove("night_mode").commit()
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        resetNightMode()
         BaromiDatabase.getInstance(ctx).clearAllTables()
         scenario = ActivityScenario.launch(MainActivity::class.java)
     }
@@ -55,7 +56,14 @@ class SettingsE2ETest {
         scenario.close()
         AlarmScheduler.canScheduleExactOverride = null
         // Night mode is global process state — reset it so it can't leak into other tests.
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        resetNightMode()
+    }
+
+    // setDefaultNightMode recreates active delegates, which must happen on the main thread.
+    private fun resetNightMode() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }
     }
 
     @Test

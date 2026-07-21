@@ -10,6 +10,7 @@ import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -20,6 +21,8 @@ import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.ui.MainActivity
+import org.hamcrest.Matchers.allOf
+import org.hamcrest.Matchers.containsString
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -66,6 +69,39 @@ class SettingsE2ETest {
         onView(withContentDescription("Navigate up")).perform(click())
         Waits.waitUntil {
             onView(withText("How are you right now?")).check(matches(isDisplayed()))
+        }
+    }
+
+    @Test
+    fun disabling_the_last_category_is_blocked_with_an_alert() {
+        onView(withId(R.id.action_settings)).perform(click())
+        Waits.waitUntil {
+            onView(withText("Reminder times")).check(matches(isDisplayed()))
+        }
+
+        // Disable two of the three built-in categories.
+        disableCategory("Mood")
+        disableCategory("Energy")
+
+        // Disabling the last enabled category (Anxiety) must be blocked with an alert.
+        onView(allOf(withText("Disable"), hasSibling(withText("Anxiety")))).perform(scrollTo(), click())
+        Waits.waitUntil {
+            onView(withText(containsString("add or enable another category first")))
+                .check(matches(isDisplayed()))
+        }
+        onView(withText(android.R.string.ok)).perform(click())
+
+        // Anxiety stays enabled — its row still offers "Disable", not "Enable".
+        onView(allOf(withText("Disable"), hasSibling(withText("Anxiety"))))
+            .perform(scrollTo())
+            .check(matches(isDisplayed()))
+    }
+
+    /** Clicks the Disable button in the given category's row and waits for the row to flip to Enable. */
+    private fun disableCategory(name: String) {
+        onView(allOf(withText("Disable"), hasSibling(withText(name)))).perform(scrollTo(), click())
+        Waits.waitUntil {
+            onView(allOf(withText("Enable"), hasSibling(withText(name)))).check(matches(isDisplayed()))
         }
     }
 }

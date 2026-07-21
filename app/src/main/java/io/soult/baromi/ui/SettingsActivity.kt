@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import io.soult.baromi.R
@@ -201,6 +202,11 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setCategoryEnabled(category: Category, enabled: Boolean) {
         lifecycleScope.launch {
+            // Disabling the only enabled category would leave nothing to rate on a check-in.
+            if (!enabled && categories.isLastEnabled(category)) {
+                showLastCategoryAlert()
+                return@launch
+            }
             categories.setEnabled(category, enabled)
             renderCategories()
         }
@@ -208,9 +214,22 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun removeCategory(category: Category) {
         lifecycleScope.launch {
+            // Deleting the only enabled category would leave nothing to rate on a check-in.
+            if (categories.isLastEnabled(category)) {
+                showLastCategoryAlert()
+                return@launch
+            }
             categories.remove(category)
             renderCategories()
         }
+    }
+
+    private fun showLastCategoryAlert() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.category_min_title)
+            .setMessage(R.string.category_min_message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun addTag() {

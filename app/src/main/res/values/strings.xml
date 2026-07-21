@@ -28,6 +28,8 @@
     <string name="category_duplicate">Category already exists</string>
     <string name="category_invalid">Enter a category without \',\'</string>
     <string name="category_max_reached">Up to 3 custom categories</string>
+    <string name="category_min_title">Keep at least one category</string>
+    <string name="category_min_message">You can\'t remove all categories. To disable or delete this one, add or enable another category first.</string>
     <string name="reminder_time_format">%1$02d:%2$02d</string>
     <string name="tag_in_use">Tag is in use and can\'t be removed</string>
     <string name="tag_invalid">Enter a tag without \';\'</string>

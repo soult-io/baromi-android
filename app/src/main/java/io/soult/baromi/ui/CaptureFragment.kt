@@ -156,7 +156,10 @@ class CaptureFragment : Fragment() {
         }
 
     private fun updateSaveEnabled() {
-        binding?.buttonSave?.isEnabled = loaded && categories.all { selected.containsKey(it.id) }
+        // Require at least one category (Settings enforces this too) so a value-less check-in can't
+        // be saved, then require every shown category to have a rating.
+        binding?.buttonSave?.isEnabled =
+            loaded && categories.isNotEmpty() && categories.all { selected.containsKey(it.id) }
     }
 
     private fun save() {

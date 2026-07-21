@@ -27,6 +27,9 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM category")
     suspend fun count(): Int
 
+    @Query("SELECT COUNT(*) FROM category WHERE enabled = 1")
+    suspend fun enabledCount(): Int
+
     @Query("SELECT COUNT(*) FROM category WHERE builtin = 0")
     suspend fun customCount(): Int
 

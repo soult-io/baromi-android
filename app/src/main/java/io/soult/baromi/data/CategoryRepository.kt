@@ -21,6 +21,14 @@ class CategoryRepository(private val dao: CategoryDao) {
 
     suspend fun enabled(): List<Category> = dao.getEnabled()
 
+    /**
+     * True when removing [category] from the enabled set (by disabling or deleting it) would leave
+     * no enabled categories at all. A check-in needs at least one category to rate, so the caller
+     * must block the action and prompt the user to add or enable another first.
+     */
+    suspend fun isLastEnabled(category: Category): Boolean =
+        category.enabled && dao.enabledCount() <= 1
+
     /** Adds a custom category. Rejects blank names and names containing ',' (the CSV column separator). */
     suspend fun add(name: String): AddResult {
         val trimmed = name.trim()

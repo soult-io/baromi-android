@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import androidx.room.Update
 
 @Dao
 interface CheckinDao {
@@ -15,9 +14,6 @@ interface CheckinDao {
 
     @Insert
     suspend fun insertValue(value: CheckinValue)
-
-    @Update
-    suspend fun update(checkin: Checkin)
 
     @Delete
     suspend fun delete(checkin: Checkin)

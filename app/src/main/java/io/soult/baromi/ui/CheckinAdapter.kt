@@ -1,8 +1,9 @@
 package io.soult.baromi.ui
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import io.soult.baromi.data.Category
 import io.soult.baromi.data.CheckinWithDetails
@@ -43,28 +44,9 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
             val axes = categories
                 .mapNotNull { cat -> byCategory[cat.id]?.let { "${cat.name} $it" } }
                 .joinToString("  ·  ")
-            if (axes.isEmpty()) {
-                binding.axesText.visibility = View.GONE
-            } else {
-                binding.axesText.visibility = View.VISIBLE
-                binding.axesText.text = axes
-            }
-
-            val comment = c.comment
-            if (comment.isNullOrBlank()) {
-                binding.commentText.visibility = View.GONE
-            } else {
-                binding.commentText.visibility = View.VISIBLE
-                binding.commentText.text = comment
-            }
-
-            val tags = row.tags.map { it.label }.sorted()
-            if (tags.isEmpty()) {
-                binding.tagsText.visibility = View.GONE
-            } else {
-                binding.tagsText.visibility = View.VISIBLE
-                binding.tagsText.text = tags.joinToString("  ·  ")
-            }
+            binding.axesText.textOrGone(axes)
+            binding.commentText.textOrGone(c.comment?.takeUnless { it.isBlank() })
+            binding.tagsText.textOrGone(row.tags.map { it.label }.sorted().joinToString("  ·  "))
         }
 
         private companion object {
@@ -72,4 +54,10 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
                 DateTimeFormatter.ofPattern("EEE, MMM d  ·  HH:mm", Locale.getDefault()).withZone(ZoneId.systemDefault())
         }
     }
+}
+
+/** Sets the text and shows the view, or hides it (GONE) when the text is null/empty. */
+private fun TextView.textOrGone(value: String?) {
+    isVisible = !value.isNullOrEmpty()
+    text = value
 }

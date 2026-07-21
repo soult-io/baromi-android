@@ -1,6 +1,7 @@
 package io.soult.baromi.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -160,6 +161,9 @@ class CaptureFragment : Fragment() {
                 Toast.makeText(requireContext(), R.string.saved_confirmation, Toast.LENGTH_SHORT).show()
                 (activity as? MainActivity)?.showHistory()
             } catch (e: Exception) {
+                // Surface the failure — a silently dropped core write is a debugging trap.
+                Log.e("CaptureFragment", "check-in save failed", e)
+                if (isAdded) Toast.makeText(requireContext(), R.string.save_failed, Toast.LENGTH_SHORT).show()
                 updateSaveEnabled()
             }
         }

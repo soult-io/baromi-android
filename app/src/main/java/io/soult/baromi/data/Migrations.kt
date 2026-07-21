@@ -8,9 +8,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * so a table can be dropped and recreated without cascading its children away — as long as row ids
  * are preserved so the child foreign keys still resolve afterward.
  *
- * Every `CREATE`/`INDEX` statement below is copied verbatim from Room's generated v3 schema
- * (`app/schemas/.../3.json`); a fresh v3 install and a migrated v2 database must end up
- * byte-identical or Room's post-migration schema validation fails loudly at open.
+ * Every `CREATE`/`INDEX` statement below is frozen literal DDL that must reproduce Room's generated
+ * v3 schema exactly: a fresh v3 install and a migrated v2 database must end up byte-identical, or
+ * Room's post-migration schema validation fails loudly at open. `Migration2To3Test` guards this by
+ * migrating a real v2 database and letting that runtime validation run. Keep this SQL as literals —
+ * wiring it to the entities would let a future entity refactor silently rewrite history.
  */
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {

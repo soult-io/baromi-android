@@ -11,9 +11,13 @@ import io.soult.baromi.BuildConfig
  *
  * v3 replaces the fixed mood/energy/anxiety columns with a flexible category model: a `category`
  * table plus one `checkin_value` row per enabled category. [MIGRATION_2_3] carries an existing v2
- * database forward (backfilling values from the old columns); schemas are exported so the migration
- * can be diffed against Room's generated DDL. The DEBUG-only destructive fallback stays as a
- * backstop — a release build has a real migration and never silently wipes the record.
+ * database forward (backfilling values from the old columns). The DEBUG-only destructive fallback
+ * stays as a backstop — a release build has a real migration and never silently wipes the record.
+ *
+ * exportSchema is still off: enabling it is only worthwhile once the generated JSON baseline is
+ * committed, which needs a build environment that surfaces `app/schemas/` (the container build host
+ * does not). Until then the migration is validated by Room's own runtime schema check, which the
+ * Robolectric migration test exercises against a real v2 database.
  */
 @Database(
     entities = [
@@ -25,7 +29,7 @@ import io.soult.baromi.BuildConfig
         CheckinValue::class,
     ],
     version = 3,
-    exportSchema = true,
+    exportSchema = false,
 )
 abstract class BaromiDatabase : RoomDatabase() {
     abstract fun checkinDao(): CheckinDao

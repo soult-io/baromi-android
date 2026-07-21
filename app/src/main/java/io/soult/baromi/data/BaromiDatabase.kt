@@ -14,10 +14,12 @@ import io.soult.baromi.BuildConfig
  * database forward (backfilling values from the old columns). The DEBUG-only destructive fallback
  * stays as a backstop — a release build has a real migration and never silently wipes the record.
  *
- * exportSchema is still off: enabling it is only worthwhile once the generated JSON baseline is
- * committed, which needs a build environment that surfaces `app/schemas/` (the container build host
- * does not). Until then the migration is validated by Room's own runtime schema check, which the
- * Robolectric migration test exercises against a real v2 database.
+ * exportSchema is on. Room writes the generated schema for each version to `app/schemas/`
+ * (location set by the `room.schemaLocation` KSP arg in build.gradle.kts); the version-3 baseline
+ * `app/schemas/io.soult.baromi.data.BaromiDatabase/3.json` is committed. That committed baseline is
+ * the record of the current on-disk schema — the next migration is written against it. The
+ * Robolectric migration test still exercises Room's own runtime schema check against a real v2
+ * database.
  */
 @Database(
     entities = [
@@ -29,7 +31,7 @@ import io.soult.baromi.BuildConfig
         CheckinValue::class,
     ],
     version = 3,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class BaromiDatabase : RoomDatabase() {
     abstract fun checkinDao(): CheckinDao

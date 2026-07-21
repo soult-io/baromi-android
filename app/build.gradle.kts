@@ -64,6 +64,14 @@ kotlin {
     }
 }
 
+// Room exports its generated schema (one JSON per version) here so the on-disk shape is committed
+// and reviewable, and future migrations can be validated against the baseline. app/schemas/ is
+// tracked in git, not generated output to ignore.
+ksp {
+    // $projectDir is the :app module dir, so this resolves to app/schemas/.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

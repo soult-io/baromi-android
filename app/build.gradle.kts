@@ -21,6 +21,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing is env-driven so no keystore or password ever lives in the repo. The config is
+    // created only when BAROMI_KEYSTORE_FILE is set (CI's release job / a local signed build); without
+    // it, release builds are produced unsigned and CI signs the artifacts separately. App-specific env
+    // names keep this distinct from the sibling Android apps on the shared FRAME-DESK-org runner.
+    signingConfigs {
+        val keystoreFile = System.getenv("BAROMI_KEYSTORE_FILE")
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("BAROMI_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BAROMI_KEY_ALIAS")
+                keyPassword = System.getenv("BAROMI_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -28,6 +44,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (System.getenv("BAROMI_KEYSTORE_FILE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

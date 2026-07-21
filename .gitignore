@@ -9,3 +9,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Signing keystores must never be committed — release signing is env-driven (see app/build.gradle.kts).
+*.jks
+*.keystore

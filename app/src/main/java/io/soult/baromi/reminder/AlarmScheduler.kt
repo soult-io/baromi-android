@@ -60,11 +60,18 @@ object AlarmScheduler {
         if (!canScheduleExact(context)) return
         val am = context.getSystemService(AlarmManager::class.java)
         val triggerAt = ReminderScheduling.nextTrigger(now, zone, hour, minute).toEpochMilli()
-        am.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerAt,
-            pendingIntent(context, id, hour, minute, triggerAt),
-        )
+        // The exact-alarm grant can be revoked between the capability check above and this call
+        // (a documented Android race). Swallow the resulting SecurityException so a background
+        // re-arm can't crash the app; the reminder simply won't fire until the grant returns.
+        try {
+            am.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAt,
+                pendingIntent(context, id, hour, minute, triggerAt),
+            )
+        } catch (e: SecurityException) {
+            return
+        }
     }
 
     fun cancelOne(context: Context, id: Long, hour: Int, minute: Int) {

@@ -35,6 +35,7 @@ class TagRepositoryTest {
     fun seeds_default_tags_when_empty() = runTest {
         repo.seedDefaultsIfEmpty()
         assertEquals(Tag.DEFAULTS.size, repo.all().size)
+        assertTrue("defaults are built-in", repo.all().all { it.builtin })
     }
 
     @Test
@@ -45,9 +46,11 @@ class TagRepositoryTest {
     }
 
     @Test
-    fun add_trims_and_inserts() = runTest {
+    fun add_trims_and_inserts_custom() = runTest {
         assertEquals(TagRepository.AddResult.ADDED, repo.add("  focus  "))
-        assertEquals(listOf("focus"), repo.all().map { it.label })
+        val tag = repo.all().single()
+        assertEquals("focus", tag.label)
+        assertFalse("added tags are custom", tag.builtin)
     }
 
     @Test
@@ -65,20 +68,35 @@ class TagRepositoryTest {
     }
 
     @Test
-    fun remove_unused_tag_succeeds() = runTest {
+    fun enabled_filters_disabled_tags() = runTest {
         repo.add("work")
-        val tag = repo.all().first()
-        assertTrue(repo.remove(tag))
+        val tag = repo.all().single()
+        repo.setEnabled(tag, false)
+        assertTrue(repo.enabled().isEmpty())
+        repo.setEnabled(repo.all().single(), true)
+        assertEquals(1, repo.enabled().size)
+    }
+
+    @Test
+    fun remove_custom_tag_succeeds() = runTest {
+        repo.add("work")
+        assertTrue(repo.remove(repo.all().single()))
         assertTrue(repo.all().isEmpty())
+    }
+
+    @Test
+    fun remove_builtin_tag_is_blocked() = runTest {
+        repo.seedDefaultsIfEmpty()
+        val builtin = repo.all().first()
+        assertFalse("built-in tags are disable-only", repo.remove(builtin))
+        assertEquals(Tag.DEFAULTS.size, repo.all().size)
     }
 
     @Test
     fun remove_in_use_tag_is_blocked() = runTest {
         repo.add("work")
-        val tag = repo.all().first()
-        val checkinId = db.checkinDao().insert(
-            Checkin(promptTime = null, answeredTime = 1L, mood = 3, energy = 3, anxiety = 3, comment = null),
-        )
+        val tag = repo.all().single()
+        val checkinId = db.checkinDao().insert(Checkin(promptTime = null, answeredTime = 1L, comment = null))
         db.checkinDao().attachTag(CheckinTag(checkinId, tag.id))
 
         assertFalse("a referenced tag must not be removable", repo.remove(tag))

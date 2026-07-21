@@ -7,12 +7,18 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
+import io.soult.baromi.data.Category
+import io.soult.baromi.data.CategoryRepository
 import io.soult.baromi.data.ReminderRepository
 import io.soult.baromi.data.ReminderTime
 import io.soult.baromi.data.Tag
@@ -24,9 +30,9 @@ import io.soult.baromi.reminder.rearmAllReminders
 import kotlinx.coroutines.launch
 
 /**
- * Module E — configure reminder times (add/remove within 1..8) and manage tags. Every reminder
- * change re-arms the alarms (and a removal cancels the removed time's alarm) so a change takes
- * effect immediately.
+ * Module E — configure reminder times (add/remove within 1..8), manage rating categories, and
+ * manage tags. Built-in categories and tags can be disabled but not deleted; custom ones (up to 3
+ * each) can be deleted. Every reminder change re-arms the alarms so a change takes effect at once.
  */
 class SettingsActivity : AppCompatActivity() {
 
@@ -35,15 +41,19 @@ class SettingsActivity : AppCompatActivity() {
     private val db by lazy { BaromiDatabase.getInstance(this) }
     private val reminders by lazy { ReminderRepository(db.reminderTimeDao()) }
     private val tags by lazy { TagRepository(db.tagDao()) }
+    private val categories by lazy { CategoryRepository(db.categoryDao()) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         title = getString(R.string.settings_title)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.buttonAddTime.setOnClickListener { pickTime() }
+        binding.buttonAddCategory.setOnClickListener { addCategory() }
         binding.buttonAddTag.setOnClickListener { addTag() }
+        binding.buttonGrantPermissions.setOnClickListener { grantPermissions() }
 
         // Re-attach the result listener if a picker dialog survived a configuration change.
         (supportFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker)
@@ -53,7 +63,31 @@ class SettingsActivity : AppCompatActivity() {
         ReminderPermissions.promptForExactAlarmIfNeeded(this)
 
         renderReminders()
+        renderCategories()
         renderTags()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateReminderStatus()
+    }
+
+    private fun updateReminderStatus() {
+        val notificationsOk = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        val ready = notificationsOk && AlarmScheduler.canScheduleExact(this)
+        binding.reminderStatus.text = getString(if (ready) R.string.reminders_active else R.string.reminders_need_permission)
+        binding.buttonGrantPermissions.visibility = if (ready) View.GONE else View.VISIBLE
+    }
+
+    private fun grantPermissions() {
+        ReminderPermissions.requestNotificationPermissionIfNeeded(this)
+        ReminderPermissions.promptForExactAlarmIfNeeded(this)
     }
 
     private fun renderReminders() {
@@ -71,13 +105,40 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun renderCategories() {
+        lifecycleScope.launch {
+            categories.seedDefaultsIfEmpty()
+            val all = categories.all()
+            binding.containerCategories.removeAllViews()
+            all.forEach { category ->
+                binding.containerCategories.addView(
+                    manageRow(
+                        label = category.name,
+                        enabled = category.enabled,
+                        canDelete = !category.builtin,
+                        onToggle = { setCategoryEnabled(category, it) },
+                        onRemove = { removeCategory(category) },
+                    ),
+                )
+            }
+        }
+    }
+
     private fun renderTags() {
         lifecycleScope.launch {
             tags.seedDefaultsIfEmpty()
             val all = tags.all()
             binding.containerTags.removeAllViews()
             all.forEach { tag ->
-                binding.containerTags.addView(listRow(tag.label) { removeTag(tag) })
+                binding.containerTags.addView(
+                    manageRow(
+                        label = tag.label,
+                        enabled = tag.enabled,
+                        canDelete = !tag.builtin,
+                        onToggle = { setTagEnabled(tag, it) },
+                        onRemove = { removeTag(tag) },
+                    ),
+                )
             }
         }
     }
@@ -123,6 +184,35 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun addCategory() {
+        val name = binding.inputNewCategory.text?.toString().orEmpty()
+        lifecycleScope.launch {
+            when (categories.add(name)) {
+                CategoryRepository.AddResult.ADDED -> {
+                    binding.inputNewCategory.text?.clear()
+                    renderCategories()
+                }
+                CategoryRepository.AddResult.DUPLICATE -> toast(R.string.category_duplicate)
+                CategoryRepository.AddResult.INVALID -> toast(R.string.category_invalid)
+                CategoryRepository.AddResult.MAX_REACHED -> toast(R.string.category_max_reached)
+            }
+        }
+    }
+
+    private fun setCategoryEnabled(category: Category, enabled: Boolean) {
+        lifecycleScope.launch {
+            categories.setEnabled(category, enabled)
+            renderCategories()
+        }
+    }
+
+    private fun removeCategory(category: Category) {
+        lifecycleScope.launch {
+            categories.remove(category)
+            renderCategories()
+        }
+    }
+
     private fun addTag() {
         val label = binding.inputNewTag.text?.toString().orEmpty()
         lifecycleScope.launch {
@@ -134,6 +224,13 @@ class SettingsActivity : AppCompatActivity() {
                 TagRepository.AddResult.DUPLICATE -> toast(R.string.tag_duplicate)
                 TagRepository.AddResult.INVALID -> toast(R.string.tag_invalid)
             }
+        }
+    }
+
+    private fun setTagEnabled(tag: Tag, enabled: Boolean) {
+        lifecycleScope.launch {
+            tags.setEnabled(tag, enabled)
+            renderTags()
         }
     }
 
@@ -163,6 +260,50 @@ class SettingsActivity : AppCompatActivity() {
                 setOnClickListener { onRemove() }
             },
         )
+        return row
+    }
+
+    /**
+     * A manageable list row: a name, an Enable/Disable toggle, and (custom items only) a Remove
+     * button. Disabled items are dimmed. Built-ins pass canDelete=false so they can't be deleted.
+     */
+    private fun manageRow(
+        label: String,
+        enabled: Boolean,
+        canDelete: Boolean,
+        onToggle: (Boolean) -> Unit,
+        onRemove: () -> Unit,
+    ): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        row.addView(
+            TextView(this).apply {
+                text = label
+                textSize = 18f
+                alpha = if (enabled) 1f else 0.5f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            },
+        )
+        row.addView(
+            MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = getString(if (enabled) R.string.disable else R.string.enable)
+                setOnClickListener { onToggle(!enabled) }
+            },
+        )
+        if (canDelete) {
+            row.addView(
+                MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = getString(R.string.remove)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { marginStart = (8 * resources.displayMetrics.density).toInt() }
+                    setOnClickListener { onRemove() }
+                },
+            )
+        }
         return row
     }
 

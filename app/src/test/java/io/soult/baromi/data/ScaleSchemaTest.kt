@@ -2,10 +2,11 @@ package io.soult.baromi.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The scale direction is a frozen contract — these values are derived from the spec. */
+/** The 1..5 scale is a frozen contract — these values are derived from the spec. */
 class ScaleSchemaTest {
 
     @Test
@@ -15,23 +16,27 @@ class ScaleSchemaTest {
     }
 
     @Test
-    fun anxiety_higher_means_calmer() {
-        // Anxiety must run the same direction as the others: 5 = better = calm.
-        assertEquals("very anxious" to "very calm", ScaleSchema.axes["anxiety"])
-    }
-
-    @Test
-    fun mood_and_energy_higher_is_better() {
-        assertEquals("very low" to "very good", ScaleSchema.axes["mood"])
-        assertEquals("drained" to "energized", ScaleSchema.axes["energy"])
-    }
-
-    @Test
     fun in_range_guards_bounds() {
         assertFalse(ScaleSchema.inRange(0))
         assertTrue(ScaleSchema.inRange(1))
         assertTrue(ScaleSchema.inRange(5))
         assertFalse(ScaleSchema.inRange(6))
+    }
+
+    @Test
+    fun require_in_range_throws_below_bound() {
+        assertThrows(IllegalArgumentException::class.java) { ScaleSchema.requireInRange("value", 0) }
+    }
+
+    @Test
+    fun require_in_range_throws_above_bound() {
+        assertThrows(IllegalArgumentException::class.java) { ScaleSchema.requireInRange("value", 6) }
+    }
+
+    @Test
+    fun require_in_range_allows_extremes() {
+        ScaleSchema.requireInRange("value", 1)
+        ScaleSchema.requireInRange("value", 5)
     }
 
     @Test

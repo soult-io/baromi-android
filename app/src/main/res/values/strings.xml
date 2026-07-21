@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Baromi</string>
-
     <string name="checkin_title">How are you right now?</string>
-    <string name="axis_mood">Mood</string>
-    <string name="axis_energy">Energy</string>
-    <string name="axis_anxiety">Anxiety</string>
-    <string name="mood_anchors">1 = very low · 5 = very good</string>
-    <string name="energy_anchors">1 = drained · 5 = energized</string>
-    <string name="anxiety_anchors">1 = very anxious · 5 = very calm</string>
     <string name="comment_hint">Comment (optional)</string>
     <string name="tags_header">Tags</string>
-    <string name="axis_value_format">%1$s: %2$d</string>
+    <string name="axis_caption_format">%1$s: %2$s</string>
+    <string name="nav_capture">Check in</string>
+    <string name="nav_history">History</string>
+    <string name="history_empty">No check-ins yet.\nTap Check in to record how you feel.</string>
     <string name="save_checkin">Save check-in</string>
     <string name="saved_confirmation">Check-in saved</string>
+    <string name="save_failed">Couldn\'t save check-in</string>
     <string name="menu_export">Export CSV</string>
     <string name="export_failed">Export failed</string>
     <string name="action_settings">Settings</string>
@@ -23,6 +20,14 @@
     <string name="new_tag_hint">New tag</string>
     <string name="add_tag">Add</string>
     <string name="remove">Remove</string>
+    <string name="enable">Enable</string>
+    <string name="disable">Disable</string>
+    <string name="categories_header">Categories</string>
+    <string name="new_category_hint">New category</string>
+    <string name="add_category">Add</string>
+    <string name="category_duplicate">Category already exists</string>
+    <string name="category_invalid">Enter a category without \',\'</string>
+    <string name="category_max_reached">Up to 3 custom categories</string>
     <string name="reminder_time_format">%1$02d:%2$02d</string>
     <string name="tag_in_use">Tag is in use and can\'t be removed</string>
     <string name="tag_invalid">Enter a tag without \';\'</string>
@@ -30,4 +35,12 @@
     <string name="reminder_min_reached">Keep at least one reminder</string>
     <string name="reminder_max_reached">Up to 8 reminders</string>
     <string name="reminder_duplicate">That time is already set</string>
+    <string name="onboarding_title">Welcome to Baromi</string>
+    <string name="onboarding_body">Check in on how you feel: mood, energy, and how calm or anxious you are. It stays private on your device. Review your history and export it anytime.</string>
+    <string name="onboarding_reminders">Want gentle reminders? Baromi can nudge you to check in at times you choose. It\'s optional; you can always check in yourself.</string>
+    <string name="onboarding_enable">Enable reminders</string>
+    <string name="onboarding_skip">Not now</string>
+    <string name="reminders_active">Reminders are on.</string>
+    <string name="reminders_need_permission">Reminders won\'t fire until you grant permission.</string>
+    <string name="grant_permission">Grant permission</string>
 </resources>

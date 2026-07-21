@@ -64,6 +64,12 @@ kotlin {
     }
 }
 
+// Export Room's generated schema JSON (app/schemas/) so migrations can be diffed against the real
+// DDL and validated by tests.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

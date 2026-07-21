@@ -152,6 +152,16 @@ class Migration2To3Test {
             val all = db.checkinDao().getAllWithDetails()
             assertEquals(listOf(2L, 1L), all.map { it.checkin.id })
             assertFalse("every migrated check-in carries its three values", all.any { it.values.size != 3 })
+
+            // The old fixed columns are physically gone from checkin (not just ignored by Room).
+            val checkinColumns = db.openHelper.readableDatabase
+                .query("PRAGMA table_info(`checkin`)").use { c ->
+                    buildList { while (c.moveToNext()) add(c.getString(c.getColumnIndexOrThrow("name"))) }
+                }
+            assertEquals(
+                listOf("id", "prompt_time", "answered_time", "comment", "locked"),
+                checkinColumns,
+            )
         } finally {
             db.close()
         }

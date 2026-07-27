@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.VisibleForTesting
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -52,6 +53,10 @@ class HistoryFragment : Fragment() {
     private var calendarCategoryId: Long = -1L
     private var window: HistoryStats.Window = HistoryStats.Window.MONTH
 
+    // Tests drive rendering directly via renderForTest and turn off the async DB load.
+    @VisibleForTesting
+    var autoLoad = true
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val b = FragmentHistoryBinding.inflate(inflater, container, false)
         binding = b
@@ -84,19 +89,31 @@ class HistoryFragment : Fragment() {
         b.modeToggle.check(R.id.btnList)
         b.windowToggle.check(R.id.btnMonth)
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            val db = BaromiDatabase.getInstance(requireContext().applicationContext)
-            items = db.checkinDao().getAllWithDetails()
-            categories = db.categoryDao().getAll()
-            enabledCategories = categories.filter { it.enabled }
-            loaded = true
-            calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
-            renderList()
-            buildCategoryChips()
-            renderCalendar()
-            renderCharts()
+        if (autoLoad) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val db = BaromiDatabase.getInstance(requireContext().applicationContext)
+                applyData(db.checkinDao().getAllWithDetails(), db.categoryDao().getAll())
+            }
         }
     }
+
+    /** Store the loaded record and render every view from it. */
+    private fun applyData(items: List<CheckinWithDetails>, categories: List<Category>) {
+        this.items = items
+        this.categories = categories
+        this.enabledCategories = categories.filter { it.enabled }
+        this.loaded = true
+        this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
+        renderList()
+        buildCategoryChips()
+        renderCalendar()
+        renderCharts()
+    }
+
+    /** Test seam: render from supplied fixtures without the DB/coroutine. */
+    @VisibleForTesting
+    fun renderForTest(items: List<CheckinWithDetails>, categories: List<Category>) =
+        applyData(items, categories)
 
     private fun showMode(checkedId: Int) {
         val b = binding ?: return

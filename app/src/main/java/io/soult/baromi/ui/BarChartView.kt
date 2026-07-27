@@ -7,7 +7,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import com.google.android.material.color.MaterialColors
-import kotlin.math.max
+import io.soult.baromi.stats.BarMetrics
 
 /**
  * A minimal, dependency-free bar chart: evenly spaced bars over a fixed [minValue]..[maxValue]
@@ -36,11 +36,11 @@ class BarChartView @JvmOverloads constructor(
     }
     private val rect = RectF()
 
-    /** Set bars and the y-range. [maxValue] must exceed [minValue]; callers guarantee that. */
+    /** Set bars and the y-range; [BarMetrics] floors a degenerate range at draw time. */
     fun setData(bars: List<Bar>, minValue: Double, maxValue: Double) {
         this.bars = bars
         this.minValue = minValue
-        this.maxValue = max(maxValue, minValue + 1.0)
+        this.maxValue = maxValue
         contentDescription = bars.joinToString(", ") { "${it.label}: ${it.value}" }
         invalidate()
     }
@@ -52,12 +52,11 @@ class BarChartView @JvmOverloads constructor(
         canvas.drawLine(0f, baseline, w, baseline, axisPaint)
         if (bars.isEmpty()) return
 
-        val span = (maxValue - minValue).toFloat()
         val slot = w / bars.size
         val barWidth = slot * 0.7f
         val sidePad = (slot - barWidth) / 2f
         for ((i, bar) in bars.withIndex()) {
-            val norm = ((bar.value - minValue) / span).toFloat().coerceIn(0f, 1f)
+            val norm = BarMetrics.heightFraction(bar.value, minValue, maxValue).toFloat()
             val top = baseline - norm * baseline
             val left = i * slot + sidePad
             rect.set(left, top, left + barWidth, baseline)

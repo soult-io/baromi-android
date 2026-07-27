@@ -9,7 +9,6 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.MaterialColors
-import io.soult.baromi.R
 import io.soult.baromi.stats.HistoryStats
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -44,25 +43,25 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = MaterialColors.getColor(this@CalendarHeatmapView, R.attr.colorSurfaceContainerHighest)
+        color = MaterialColors.getColor(this@CalendarHeatmapView, com.google.android.material.R.attr.colorSurfaceContainerHighest)
     }
     private val todayRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f * density
-        color = MaterialColors.getColor(this@CalendarHeatmapView, R.attr.colorPrimary)
+        color = MaterialColors.getColor(this@CalendarHeatmapView, androidx.appcompat.R.attr.colorPrimary)
     }
     private val dayText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = MaterialColors.getColor(this@CalendarHeatmapView, R.attr.colorOnSurface)
+        color = MaterialColors.getColor(this@CalendarHeatmapView, com.google.android.material.R.attr.colorOnSurface)
         textAlign = Paint.Align.CENTER
         textSize = 13f * density
     }
     private val headerText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = MaterialColors.getColor(this@CalendarHeatmapView, R.attr.colorOnSurfaceVariant)
+        color = MaterialColors.getColor(this@CalendarHeatmapView, com.google.android.material.R.attr.colorOnSurfaceVariant)
         textAlign = Paint.Align.CENTER
         textSize = 12f * density
     }
     private val primary =
-        MaterialColors.getColor(this, R.attr.colorPrimary)
+        MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
     private val cellRect = RectF()
 
     /** Show [month], tinting days from [stats] (all-history map, sliced here), with [today] ringed. */

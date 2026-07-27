@@ -204,7 +204,7 @@ class HistoryFragment : Fragment() {
 
     private fun chartTitle(text: String): TextView = TextView(requireContext()).apply {
         this.text = text
-        setTextAppearance(resolveAttr(R.attr.textAppearanceTitleSmall))
+        setTextAppearance(resolveAttr(com.google.android.material.R.attr.textAppearanceTitleSmall))
         val top = dp(16)
         setPadding(0, top, 0, dp(4))
     }

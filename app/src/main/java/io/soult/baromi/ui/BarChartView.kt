@@ -7,7 +7,6 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import com.google.android.material.color.MaterialColors
-import io.soult.baromi.R
 import kotlin.math.max
 
 /**
@@ -29,10 +28,10 @@ class BarChartView @JvmOverloads constructor(
     private var maxValue: Double = 1.0
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = MaterialColors.getColor(this@BarChartView, R.attr.colorPrimary)
+        color = MaterialColors.getColor(this@BarChartView, androidx.appcompat.R.attr.colorPrimary)
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = MaterialColors.getColor(this@BarChartView, R.attr.colorOutlineVariant)
+        color = MaterialColors.getColor(this@BarChartView, com.google.android.material.R.attr.colorOutlineVariant)
         strokeWidth = context.resources.displayMetrics.density // 1dp
     }
     private val rect = RectF()

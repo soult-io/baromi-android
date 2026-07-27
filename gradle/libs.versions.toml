@@ -9,7 +9,7 @@ room = "2.8.4"
 coroutines = "1.8.1"
 junit = "4.13.2"
 robolectric = "4.13"
-androidxTestCore = "1.6.1"
+androidxTestCore = "1.7.0"
 androidxJunit = "1.2.1"
 coroutinesTest = "1.11.0"
 

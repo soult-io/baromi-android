@@ -131,6 +131,7 @@ class HistoryFragment : Fragment() {
         group.setOnCheckedStateChangeListener { chipGroup, checkedIds ->
             val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
             calendarCategoryId = chipGroup.findViewById<Chip>(id).tag as Long
+            clearDayDetail() // the open day's entries belonged to the previous category
             renderCalendar()
         }
     }

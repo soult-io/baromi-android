@@ -38,7 +38,8 @@ object HistoryStats {
     /**
      * Per-day mean value for [categoryId] over [window] ending at [today], oldest day first. Only
      * days with at least one value for the category appear (gaps stay gaps, so a bar chart never
-     * interpolates over missing days). Days after [today] are ignored.
+     * interpolates over missing days). Days after [today] are ignored. This is [dayAveragesByDate]
+     * narrowed to the window and ordered — the two share one aggregation so they can't drift.
      */
     fun dailyAverages(
         checkins: List<CheckinWithDetails>,
@@ -48,14 +49,11 @@ object HistoryStats {
         today: LocalDate,
     ): List<DayStat> {
         val start = windowStart(window, today)
-        val byDay = sortedMapOf<LocalDate, MutableList<Int>>()
-        for (row in checkins) {
-            val value = row.values.firstOrNull { it.categoryId == categoryId } ?: continue
-            val date = dateOf(row.checkin.answeredTime, zone)
-            if (!inWindow(date, start, today)) continue
-            byDay.getOrPut(date) { mutableListOf() }.add(value.value)
-        }
-        return byDay.map { (date, values) -> DayStat(date, values.average(), values.size) }
+        return dayAveragesByDate(checkins, categoryId, zone)
+            .filterKeys { inWindow(it, start, today) }
+            .toSortedMap()
+            .values
+            .toList()
     }
 
     /**

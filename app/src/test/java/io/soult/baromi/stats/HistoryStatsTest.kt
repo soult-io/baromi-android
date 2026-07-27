@@ -71,6 +71,25 @@ class HistoryStatsTest {
     }
 
     @Test
+    fun empty_input_yields_empty_aggregates() {
+        val none = emptyList<CheckinWithDetails>()
+        assertEquals(emptyList<HistoryStats.DayStat>(), HistoryStats.dailyAverages(none, moodId, zone, HistoryStats.Window.MONTH, today))
+        assertEquals(emptyMap<LocalDate, HistoryStats.DayStat>(), HistoryStats.dayAveragesByDate(none, moodId, zone))
+        assertEquals(emptyList<HistoryStats.TagCount>(), HistoryStats.tagCounts(none, zone, HistoryStats.Window.ALL, today))
+    }
+
+    @Test
+    fun all_window_keeps_old_days_but_still_drops_future() {
+        val old = LocalDate.of(2025, 1, 1)
+        val data = listOf(
+            checkin(old, mapOf(moodId to 3)),
+            checkin(LocalDate.of(2026, 7, 28), mapOf(moodId to 5)), // after today
+        )
+        val out = HistoryStats.dailyAverages(data, moodId, zone, HistoryStats.Window.ALL, today)
+        assertEquals(listOf(HistoryStats.DayStat(old, 3.0, 1)), out)
+    }
+
+    @Test
     fun dayAveragesByDate_keys_by_local_date_and_means() {
         val d = LocalDate.of(2026, 7, 10)
         val data = listOf(

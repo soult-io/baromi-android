@@ -13,7 +13,7 @@ import java.time.YearMonth
 class CalendarGrid(val month: YearMonth, val firstDayOfWeek: DayOfWeek) {
 
     /** Column 0..6 of [date] under [firstDayOfWeek]. */
-    fun columnOf(date: LocalDate): Int =
+    private fun columnOf(date: LocalDate): Int =
         (date.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
 
     /** Blank cells before day 1 (the first row's leading gap). */

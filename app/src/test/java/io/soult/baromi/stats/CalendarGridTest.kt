@@ -54,6 +54,15 @@ class CalendarGridTest {
     }
 
     @Test
+    fun month_needing_six_rows() {
+        // Aug 1 2026 is a Saturday; a 31-day month starting Saturday spills into a 6th row.
+        val g = CalendarGrid(YearMonth.of(2026, 8), DayOfWeek.SUNDAY)
+        assertEquals(6, g.leadingBlanks) // Sun..Fri before Sat
+        assertEquals(6, g.rowCount) // (6 + 31 + 6) / 7
+        assertEquals(5 to 1, g.cellOf(31)) // last day sits in the 6th row
+    }
+
+    @Test
     fun leap_february_row_count() {
         // Feb 1 2024 is a Thursday; leap Feb has 29 days.
         val g = CalendarGrid(YearMonth.of(2024, 2), DayOfWeek.SUNDAY)

@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.MaterialColors
+import io.soult.baromi.stats.CalendarGrid
 import io.soult.baromi.stats.HistoryStats
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -36,6 +37,9 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
     private val firstDayOfWeek: DayOfWeek =
         java.time.temporal.WeekFields.of(Locale.getDefault()).firstDayOfWeek
+
+    // Pure grid geometry (leading blanks, rows, tap → date); the view only draws what it returns.
+    private var grid = CalendarGrid(month, firstDayOfWeek)
 
     private val density = context.resources.displayMetrics.density
     private var headerHeight = 0f
@@ -69,29 +73,20 @@ class CalendarHeatmapView @JvmOverloads constructor(
         this.month = month
         this.stats = stats
         this.today = today
+        this.grid = CalendarGrid(month, firstDayOfWeek)
         requestLayout()
         invalidate()
-    }
-
-    /** Column (0..6) for [date] given the locale's first day of week. */
-    private fun columnOf(date: LocalDate): Int =
-        (date.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
-
-    private fun rowsNeeded(): Int {
-        val lead = columnOf(month.atDay(1))
-        return ((lead + month.lengthOfMonth() + 6) / 7)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = MeasureSpec.getSize(widthMeasureSpec)
         cellSize = w / 7f
         headerHeight = cellSize * 0.5f
-        val h = (headerHeight + rowsNeeded() * cellSize).toInt()
+        val h = (headerHeight + grid.rowCount * cellSize).toInt()
         setMeasuredDimension(w, h)
     }
 
     override fun onDraw(canvas: Canvas) {
-        val lead = columnOf(month.atDay(1))
         val len = month.lengthOfMonth()
 
         val headerBaseline = headerHeight * 0.5f - (headerText.ascent() + headerText.descent()) / 2f
@@ -103,9 +98,7 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
         val inset = 3f * density
         for (day in 1..len) {
-            val index = lead + day - 1
-            val col = index % 7
-            val row = index / 7
+            val (row, col) = grid.cellOf(day)
             val left = col * cellSize + inset
             val top = headerHeight + row * cellSize + inset
             cellRect.set(left, top, left + cellSize - 2 * inset, top + cellSize - 2 * inset)
@@ -131,17 +124,10 @@ class CalendarHeatmapView @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action != MotionEvent.ACTION_UP) return true
-        val col = (event.x / cellSize).toInt()
-        val row = ((event.y - headerHeight) / cellSize).toInt()
-        if (col !in 0..6 || row < 0) return true
-        val lead = columnOf(month.atDay(1))
-        val day = row * 7 + col - lead + 1
-        if (day in 1..month.lengthOfMonth()) {
-            val date = month.atDay(day)
-            if (stats[date] != null) {
-                performClick()
-                onDayClick?.invoke(date)
-            }
+        val date = grid.dateAt(event.x, event.y, cellSize, headerHeight) ?: return true
+        if (stats[date] != null) {
+            performClick()
+            onDayClick?.invoke(date)
         }
         return true
     }

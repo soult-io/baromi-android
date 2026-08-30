@@ -12,17 +12,27 @@ on:
 permissions:
   contents: read
 
-# Fork-safety model. PR checks run on GitHub-hosted runners (ephemeral, secret-free — safe for
-# untrusted fork code). The heavyweight build + instrumented jobs run on the self-hosted FRAME-DESK
-# runner and are gated to push events on THIS repo (github.repository), so a fork PR can never select
-# it. Signing secrets live ONLY in the release job (GitHub-hosted, tag-triggered). If this repo is
-# public, also enable "Require approval for all outside collaborators" (Settings → Actions → General →
-# Fork pull request workflows) so a fork PR's GitHub-hosted check needs maintainer approval to run.
+# Fork-safety model. THIS REPO IS PRIVATE, so there is no untrusted-fork surface: a pull request can
+# only come from someone who already has access to the repo. Every job therefore runs on the
+# self-hosted FRAME-DESK runner, which costs no billable minutes. Signing secrets live ONLY in the
+# release job (GitHub-hosted, tag-triggered).
+#
+# IF THIS REPO IS EVER MADE PUBLIC, move the `check` job back to `runs-on: ubuntu-latest` before
+# flipping the switch — otherwise a fork PR's untrusted code executes on the self-hosted runner. Also
+# enable "Require approval for all outside collaborators" (Settings → Actions → General → Fork pull
+# request workflows). The heavyweight build + instrumented jobs are already gated to push events on
+# THIS repo (github.repository), so a fork PR can never select them either way.
 jobs:
-  # Quick checks on PRs — runs on GitHub-hosted (safe for public repo forks).
+  # Quick checks on PRs — self-hosted: private repo, so no fork surface, and GitHub-hosted minutes on
+  # a private repo are billable. A batch of dependabot PRs exhausted the 2,000-minute monthly
+  # allowance, and past that GitHub fails the job at its upload step with a misleading "Artifact
+  # storage quota has been hit" (storage was in fact near-empty).
   check:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, android]
+
+    env:
+      ANDROID_HOME: /opt/android-sdk
 
     steps:
       - uses: actions/checkout@v4
@@ -33,19 +43,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # Per-repo divergence from the chess-puzzle template: baromi targets compileSdk 37, newer than
-      # the SDK the GitHub-hosted image ships preinstalled, so provision it explicitly (sets ANDROID_HOME).
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-          restore-keys: gradle-
+      # The android-actions/setup-android step that used to sit here existed only because the
+      # GitHub-hosted image did not ship baromi's compileSdk. FRAME-DESK already has it — the build
+      # job on the same runner provisions nothing and succeeds — so it is no longer needed.
+      # No actions/cache either: ~/.gradle persists between runs on the self-hosted runner.
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -81,12 +82,9 @@ jobs:
           cp app/build/outputs/apk/release/app-release-unsigned.apk /srv/mcp-android/builds/baromi-release-unsigned.apk || echo "Release APK not found, skipping"
           cp app/build/outputs/bundle/release/app-release.aab /srv/mcp-android/builds/baromi-release.aab || echo "Release AAB not found, skipping"
 
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: baromi-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+      # The debug APK is deliberately NOT uploaded as a GitHub artifact: the step above already
+      # copies it to /srv/mcp-android/builds on the self-hosted runner, and no download-artifact step
+      # references baromi-debug. The release APK/AAB below stay — the release job downloads them.
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4

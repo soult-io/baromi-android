@@ -32,7 +32,9 @@ import io.soult.baromi.databinding.ActivitySettingsBinding
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.ReminderPermissions
 import io.soult.baromi.reminder.rearmAllReminders
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 /**
@@ -303,8 +305,10 @@ class SettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val json = backup.exportJson()
-                contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
-                    ?: throw IllegalStateException("no output stream for $uri")
+                withContext(Dispatchers.IO) {
+                    contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                        ?: throw IllegalStateException("no output stream for $uri")
+                }
                 toast(R.string.backup_export_done)
             } catch (e: Exception) {
                 toast(R.string.backup_export_failed)
@@ -315,8 +319,10 @@ class SettingsActivity : AppCompatActivity() {
     private fun readBackup(uri: Uri) {
         lifecycleScope.launch {
             try {
-                val json = contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
-                    ?: throw IllegalStateException("no input stream for $uri")
+                val json = withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                        ?: throw IllegalStateException("no input stream for $uri")
+                }
                 val result = backup.importJson(json)
                 // Imported reminder times need arming, and the lists may have grown.
                 rearmAllReminders(applicationContext)

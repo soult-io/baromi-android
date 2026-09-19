@@ -8,6 +8,7 @@ import io.soult.baromi.data.Category
 import io.soult.baromi.data.Checkin
 import io.soult.baromi.data.CheckinTag
 import io.soult.baromi.data.CheckinValue
+import io.soult.baromi.data.ReminderTime
 import io.soult.baromi.data.Tag
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -64,6 +65,21 @@ class BackupManagerTest {
         // Values remapped onto the TARGET category ids by key.
         assertEquals(mapOf(tMood to 5, tEnergy to 3), details.values.associate { it.categoryId to it.value })
         assertEquals(listOf("poor sleep"), details.tags.map { it.label })
+    }
+
+    @Test
+    fun import_caps_reminder_times_at_the_daily_max() = runTest {
+        val target = newDb()
+        val data = BackupData(
+            scaleVersion = 2,
+            exportedAt = 0L,
+            categories = emptyList(),
+            tags = emptyList(),
+            reminderTimes = (0 until 12).map { BackupReminder(hour = it, minute = 0) },
+            checkins = emptyList(),
+        )
+        BackupManager(target).import(data)
+        assertEquals(ReminderTime.MAX_PER_DAY, target.reminderTimeDao().getAll().size)
     }
 
     @Test

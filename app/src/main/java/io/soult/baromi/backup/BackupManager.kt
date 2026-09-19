@@ -86,8 +86,14 @@ class BackupManager(private val db: BaromiDatabase) {
             }
         }
 
-        // Reminder times: insert IGNOREs on the unique (hour,minute) index, so this is dedup-safe.
-        data.reminderTimes.forEach { reminderDao.insert(ReminderTime(hour = it.hour, minute = it.minute)) }
+        // Reminder times: insert IGNOREs on the unique (hour,minute) index (dedup-safe), and we
+        // stop at MAX_PER_DAY so a hand-edited/old backup can't exceed the app's reminder cap.
+        var reminderSlots = ReminderTime.MAX_PER_DAY - reminderDao.count()
+        for (r in data.reminderTimes) {
+            if (reminderSlots <= 0) break
+            val inserted = reminderDao.insert(ReminderTime(hour = r.hour, minute = r.minute))
+            if (inserted >= 0) reminderSlots-- // -1 == IGNORE'd duplicate, which used no slot
+        }
 
         val existingAnswered = checkinDao.getAll().map { it.answeredTime }.toMutableSet()
         var imported = 0

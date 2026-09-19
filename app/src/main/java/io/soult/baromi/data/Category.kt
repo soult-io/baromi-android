@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 /**
  * A rating dimension (1..5). Built-in categories (Mood/Energy/Anxiety) can be disabled but not
  * deleted; custom categories (max 3) can be deleted. Built-ins carry a stable [key] that maps to
- * their face-emoji sets in code; custom categories render 1..5 as number-keycap emoji.
+ * their custom face-icon sets in code; custom categories render 1..5 as number-keycap emoji.
  */
 @Entity(
     tableName = "category",

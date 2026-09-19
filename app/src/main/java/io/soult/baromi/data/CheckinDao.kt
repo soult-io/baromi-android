@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 
 @Dao
 interface CheckinDao {
@@ -15,8 +16,20 @@ interface CheckinDao {
     @Insert
     suspend fun insertValue(value: CheckinValue)
 
+    @Update
+    suspend fun update(checkin: Checkin)
+
     @Delete
     suspend fun delete(checkin: Checkin)
+
+    // Edit path replaces a check-in's edited categories + its tags inside a transaction. Scoped to
+    // the supplied categories so a value for a since-disabled category (absent from the edit form)
+    // is preserved rather than silently dropped.
+    @Query("DELETE FROM checkin_value WHERE checkin_id = :checkinId AND category_id IN (:categoryIds)")
+    suspend fun deleteValuesForCategories(checkinId: Long, categoryIds: List<Long>)
+
+    @Query("DELETE FROM checkin_tag WHERE checkin_id = :checkinId")
+    suspend fun clearTags(checkinId: Long)
 
     @Query("SELECT * FROM checkin WHERE id = :id")
     suspend fun getById(id: Long): Checkin?

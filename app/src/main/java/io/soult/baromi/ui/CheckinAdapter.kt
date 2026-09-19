@@ -20,6 +20,9 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
     // Category display order + names, so each row renders its values as "Name value" in order.
     private var categories: List<Category> = emptyList()
 
+    /** Invoked when a row is tapped (e.g. to edit that check-in). */
+    var onItemClick: ((CheckinWithDetails) -> Unit)? = null
+
     @SuppressWarnings("NotifyDataSetChanged")
     fun submit(newItems: List<CheckinWithDetails>, categories: List<Category>) {
         this.categories = categories
@@ -31,7 +34,11 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
         VH(ItemCheckinBinding.inflate(LayoutInflater.from(parent.context), parent, false))
 
-    override fun onBindViewHolder(holder: VH, position: Int) = holder.bind(items[position], categories)
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val item = items[position]
+        holder.bind(item, categories)
+        holder.itemView.setOnClickListener { onItemClick?.invoke(item) }
+    }
 
     override fun getItemCount(): Int = items.size
 

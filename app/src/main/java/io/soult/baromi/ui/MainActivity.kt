@@ -26,6 +26,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var showingHistory = false
 
+    // Set by editCheckin() just before switching to the Check-in tab; consumed by showCapture()
+    // so selecting that tab builds an edit form instead of a blank one.
+    private var pendingEditCheckinId: Long? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -34,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_capture -> {
-                    show(CaptureFragment.newInstance(null), R.string.nav_capture, history = false)
+                    showCapture()
                     true
                 }
                 R.id.nav_history -> {
@@ -66,6 +70,27 @@ class MainActivity : AppCompatActivity() {
     /** Switch to the History tab (used after a check-in is saved). */
     fun showHistory() {
         binding.bottomNav.selectedItemId = R.id.nav_history
+    }
+
+    /** Open the Check-in tab to edit an existing check-in (called from History). */
+    fun editCheckin(checkinId: Long) {
+        pendingEditCheckinId = checkinId
+        if (binding.bottomNav.selectedItemId == R.id.nav_capture) {
+            showCapture() // already on the tab; rebuild it as an edit form
+        } else {
+            binding.bottomNav.selectedItemId = R.id.nav_capture // triggers the listener -> showCapture()
+        }
+    }
+
+    private fun showCapture() {
+        val editId = pendingEditCheckinId
+        pendingEditCheckinId = null
+        val fragment = if (editId != null) {
+            CaptureFragment.newInstanceForEdit(editId)
+        } else {
+            CaptureFragment.newInstance(null)
+        }
+        show(fragment, R.string.nav_capture, history = false)
     }
 
     private fun show(fragment: Fragment, titleRes: Int, history: Boolean) {

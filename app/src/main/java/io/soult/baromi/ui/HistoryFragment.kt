@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -16,6 +17,7 @@ import com.google.android.material.chip.Chip
 import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.data.Category
+import io.soult.baromi.data.CheckinEditPolicy
 import io.soult.baromi.data.CheckinWithDetails
 import io.soult.baromi.databinding.FragmentHistoryBinding
 import io.soult.baromi.stats.HistoryStats
@@ -70,6 +72,9 @@ class HistoryFragment : Fragment() {
         b.dayDetailList.layoutManager = LinearLayoutManager(requireContext())
         b.dayDetailList.adapter = dayDetailAdapter
 
+        listAdapter.onItemClick = ::onCheckinClicked
+        dayDetailAdapter.onItemClick = ::onCheckinClicked
+
         b.modeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) showMode(checkedId)
         }
@@ -114,6 +119,16 @@ class HistoryFragment : Fragment() {
     @VisibleForTesting
     fun renderForTest(items: List<CheckinWithDetails>, categories: List<Category>) =
         applyData(items, categories)
+
+    // Tapping a check-in opens it for editing, but only while it is still editable (same local day,
+    // per CheckinEditPolicy); otherwise it is locked and we say so.
+    private fun onCheckinClicked(row: CheckinWithDetails) {
+        if (CheckinEditPolicy.isEditable(row.checkin, System.currentTimeMillis(), zone)) {
+            (activity as? MainActivity)?.editCheckin(row.checkin.id)
+        } else {
+            Toast.makeText(requireContext(), R.string.checkin_locked, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun showMode(checkedId: Int) {
         val b = binding ?: return

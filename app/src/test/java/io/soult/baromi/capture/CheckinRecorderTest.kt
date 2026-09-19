@@ -68,6 +68,34 @@ class CheckinRecorderTest {
     }
 
     @Test
+    fun update_overwrites_values_comment_tags_and_preserves_timestamps() = runTest {
+        val work = db.tagDao().insert(Tag(label = "work"))
+        val social = db.tagDao().insert(Tag(label = "social"))
+        val id = recorder.record(
+            values = mapOf(moodId to 4, energyId to 2),
+            comment = "first", tagIds = listOf(work),
+            promptTime = 1000L, answeredTime = 2000L,
+        )
+        recorder.update(
+            checkinId = id,
+            values = mapOf(moodId to 1, energyId to 5),
+            comment = "  second  ", tagIds = listOf(social),
+        )
+        val details = db.checkinDao().getWithDetails(id)!!
+        assertEquals(1000L, details.checkin.promptTime) // timestamps unchanged by an edit
+        assertEquals(2000L, details.checkin.answeredTime)
+        assertEquals("second", details.checkin.comment) // trimmed + replaced
+        assertEquals(mapOf(moodId to 1, energyId to 5), details.values.associate { it.categoryId to it.value })
+        assertEquals(listOf("social"), details.tags.map { it.label })
+    }
+
+    @Test
+    fun update_missing_checkin_is_a_noop() = runTest {
+        recorder.update(checkinId = 999L, values = mapOf(moodId to 3), comment = "x", tagIds = emptyList())
+        assertEquals(0, db.checkinDao().getAll().size)
+    }
+
+    @Test
     fun invalid_rating_throws_and_persists_nothing() = runTest {
         var threw = false
         try {

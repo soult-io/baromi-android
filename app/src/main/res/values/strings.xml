@@ -9,8 +9,11 @@
     <string name="nav_history">History</string>
     <string name="history_empty">No check-ins yet.\nTap Check in to record how you feel.</string>
     <string name="save_checkin">Save check-in</string>
+    <string name="update_checkin">Update check-in</string>
     <string name="saved_confirmation">Check-in saved</string>
+    <string name="update_confirmation">Check-in updated</string>
     <string name="save_failed">Couldn\'t save check-in</string>
+    <string name="checkin_locked">This check-in is locked and can no longer be edited.</string>
     <string name="menu_export">Export CSV</string>
     <string name="export_failed">Export failed</string>
     <string name="action_settings">Settings</string>

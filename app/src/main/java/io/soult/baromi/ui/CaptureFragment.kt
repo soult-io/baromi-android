@@ -43,6 +43,11 @@ class CaptureFragment : Fragment() {
 
     private var promptTime: Long? = null
 
+    // When set, this fragment edits an existing check-in (opened from History) instead of recording
+    // a new one; the form is pre-filled once and Save overwrites that record.
+    private var editCheckinId: Long? = null
+    private var prefilled = false
+
     private var categories: List<Category> = emptyList()
     private val selected = mutableMapOf<Long, Int>()
     private var loaded = false
@@ -55,6 +60,7 @@ class CaptureFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         promptTime = (arguments?.getLong(ARG_PROMPT_TIME, 0L) ?: 0L).takeIf { it > 0L }
+        editCheckinId = (arguments?.getLong(ARG_EDIT_CHECKIN_ID, 0L) ?: 0L).takeIf { it > 0L }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -65,6 +71,7 @@ class CaptureFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = binding ?: return
+        if (editCheckinId != null) b.buttonSave.setText(R.string.update_checkin)
         updateSaveEnabled()
         b.buttonSave.setOnClickListener { save() }
     }
@@ -111,7 +118,37 @@ class CaptureFragment : Fragment() {
             }
             loaded = true
             updateSaveEnabled()
+            prefillIfEditing(b)
         }
+    }
+
+    // Edit mode: load the check-in's saved values/comment/tags into the freshly-built form, once.
+    // Checking each option button fires the group listener, which populates `selected` + the caption.
+    private suspend fun prefillIfEditing(b: FragmentCaptureBinding) {
+        val editId = editCheckinId ?: return
+        if (prefilled) return
+        val details = db.checkinDao().getWithDetails(editId) ?: return
+        val valuesByCategory = details.values.associate { it.categoryId to it.value }
+        for (i in 0 until b.categoriesContainer.childCount) {
+            val group = b.categoriesContainer.getChildAt(i) as? MaterialButtonToggleGroup ?: continue
+            val categoryId = group.tag as? Long ?: continue
+            val value = valuesByCategory[categoryId] ?: continue
+            for (j in 0 until group.childCount) {
+                val button = group.getChildAt(j)
+                if ((button.tag as? Int) == value) {
+                    group.check(button.id)
+                    break
+                }
+            }
+        }
+        b.inputComment.setText(details.checkin.comment.orEmpty())
+        val tagIds = details.tags.map { it.id }.toSet()
+        for (i in 0 until b.chipGroupTags.childCount) {
+            val chip = b.chipGroupTags.getChildAt(i) as? Chip ?: continue
+            chip.isChecked = (chip.tag as? Long) in tagIds
+        }
+        prefilled = true
+        updateSaveEnabled()
     }
 
     private fun addCategoryRow(container: LinearLayout, category: Category) {
@@ -127,6 +164,7 @@ class CaptureFragment : Fragment() {
             ).apply { topMargin = dp(8) }
         }
         val group = MaterialButtonToggleGroup(requireContext()).apply {
+            tag = category.id // lets prefill (edit mode) find this category's option group
             isSingleSelection = true
             isSelectionRequired = false
             layoutParams = LinearLayout.LayoutParams(
@@ -199,16 +237,22 @@ class CaptureFragment : Fragment() {
         }
         val comment = b.inputComment.text?.toString()
 
+        val editId = editCheckinId
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 withContext(NonCancellable) {
-                    recorder.record(
-                        values = values,
-                        comment = comment, tagIds = tagIds,
-                        promptTime = promptTime, answeredTime = System.currentTimeMillis(),
-                    )
+                    if (editId != null) {
+                        recorder.update(checkinId = editId, values = values, comment = comment, tagIds = tagIds)
+                    } else {
+                        recorder.record(
+                            values = values,
+                            comment = comment, tagIds = tagIds,
+                            promptTime = promptTime, answeredTime = System.currentTimeMillis(),
+                        )
+                    }
                 }
-                Toast.makeText(requireContext(), R.string.saved_confirmation, Toast.LENGTH_SHORT).show()
+                val confirm = if (editId != null) R.string.update_confirmation else R.string.saved_confirmation
+                Toast.makeText(requireContext(), confirm, Toast.LENGTH_SHORT).show()
                 (activity as? MainActivity)?.showHistory()
             } catch (e: Exception) {
                 // Surface the failure — a silently dropped core write is a debugging trap.
@@ -223,10 +267,16 @@ class CaptureFragment : Fragment() {
 
     companion object {
         private const val ARG_PROMPT_TIME = "prompt_time"
+        private const val ARG_EDIT_CHECKIN_ID = "edit_checkin_id"
 
         fun newInstance(promptTime: Long?): CaptureFragment =
             CaptureFragment().apply {
                 arguments = Bundle().apply { if (promptTime != null) putLong(ARG_PROMPT_TIME, promptTime) }
+            }
+
+        fun newInstanceForEdit(checkinId: Long): CaptureFragment =
+            CaptureFragment().apply {
+                arguments = Bundle().apply { putLong(ARG_EDIT_CHECKIN_ID, checkinId) }
             }
     }
 }

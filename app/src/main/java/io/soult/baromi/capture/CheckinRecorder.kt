@@ -37,4 +37,26 @@ class CheckinRecorder(private val db: BaromiDatabase) {
         tagIds.forEach { checkinDao.attachTag(CheckinTag(id, it)) }
         id
     }
+
+    /**
+     * Overwrites an existing check-in's values, comment, and tags atomically, preserving its
+     * original prompt/answered timestamps (the record's timeline must not shift on an edit).
+     * No-op if the check-in no longer exists.
+     */
+    suspend fun update(
+        checkinId: Long,
+        values: Map<Long, Int>,
+        comment: String?,
+        tagIds: List<Long>,
+    ) = db.withTransaction {
+        val checkinDao = db.checkinDao()
+        val existing = checkinDao.getById(checkinId) ?: return@withTransaction
+        checkinDao.update(existing.copy(comment = comment?.trim()?.ifEmpty { null }))
+        checkinDao.deleteValues(checkinId)
+        values.forEach { (categoryId, value) ->
+            checkinDao.insertValue(CheckinValue(checkinId = checkinId, categoryId = categoryId, value = value))
+        }
+        checkinDao.clearTags(checkinId)
+        tagIds.forEach { checkinDao.attachTag(CheckinTag(checkinId, it)) }
+    }
 }

@@ -134,7 +134,7 @@ object BackupCodec {
     private fun JSONObject.array(name: String): JSONArray = optJSONArray(name) ?: JSONArray()
 
     private fun JSONObject.nullableString(name: String): String? =
-        if (isNull(name)) null else optString(name, null)
+        if (isNull(name)) null else getString(name)
 
     private fun JSONObject.nullableLong(name: String): Long? =
         if (isNull(name)) null else getLong(name)

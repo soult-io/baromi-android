@@ -90,6 +90,16 @@ class CheckinRecorderTest {
     }
 
     @Test
+    fun update_preserves_values_for_categories_absent_from_the_edit() = runTest {
+        // Simulates editing a check-in after a category was disabled: only the still-present
+        // category is supplied, and the other's value must survive rather than be wiped.
+        val id = recorder.record(mapOf(moodId to 4, energyId to 2), null, emptyList(), null, 2000L)
+        recorder.update(checkinId = id, values = mapOf(moodId to 1), comment = null, tagIds = emptyList())
+        val details = db.checkinDao().getWithDetails(id)!!
+        assertEquals(mapOf(moodId to 1, energyId to 2), details.values.associate { it.categoryId to it.value })
+    }
+
+    @Test
     fun update_missing_checkin_is_a_noop() = runTest {
         recorder.update(checkinId = 999L, values = mapOf(moodId to 3), comment = "x", tagIds = emptyList())
         assertEquals(0, db.checkinDao().getAll().size)

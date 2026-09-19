@@ -39,9 +39,11 @@ class CheckinRecorder(private val db: BaromiDatabase) {
     }
 
     /**
-     * Overwrites an existing check-in's values, comment, and tags atomically, preserving its
-     * original prompt/answered timestamps (the record's timeline must not shift on an edit).
-     * No-op if the check-in no longer exists.
+     * Overwrites an existing check-in's comment and tags, and the values for the supplied categories,
+     * atomically. Values for categories NOT in [values] are left intact — so a value recorded for a
+     * category that was later disabled (and is therefore absent from the edit form) is preserved, not
+     * silently dropped. Original prompt/answered timestamps are kept (an edit must not shift the
+     * record's timeline). No-op if the check-in no longer exists.
      */
     suspend fun update(
         checkinId: Long,
@@ -52,7 +54,8 @@ class CheckinRecorder(private val db: BaromiDatabase) {
         val checkinDao = db.checkinDao()
         val existing = checkinDao.getById(checkinId) ?: return@withTransaction
         checkinDao.update(existing.copy(comment = comment?.trim()?.ifEmpty { null }))
-        checkinDao.deleteValues(checkinId)
+        val categoryIds = values.keys.toList()
+        if (categoryIds.isNotEmpty()) checkinDao.deleteValuesForCategories(checkinId, categoryIds)
         values.forEach { (categoryId, value) ->
             checkinDao.insertValue(CheckinValue(checkinId = checkinId, categoryId = categoryId, value = value))
         }

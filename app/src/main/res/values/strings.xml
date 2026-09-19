@@ -64,4 +64,13 @@
     <string name="reminders_active">Reminders are on.</string>
     <string name="reminders_need_permission">Reminders won\'t fire until you grant permission.</string>
     <string name="grant_permission">Grant permission</string>
+
+    <string name="data_header">Backup &amp; restore</string>
+    <string name="backup_description">Save a backup of all your check-ins, then import it after reinstalling or on a new device. Importing adds entries and skips any duplicates — it never deletes what you already have.</string>
+    <string name="export_backup">Export backup</string>
+    <string name="import_backup">Import backup</string>
+    <string name="backup_export_done">Backup saved</string>
+    <string name="backup_export_failed">Couldn\'t save the backup</string>
+    <string name="backup_import_done">Imported %1$d check-ins, skipped %2$d duplicates</string>
+    <string name="backup_import_failed">Couldn\'t import that file — it may not be a Baromi backup</string>
 </resources>

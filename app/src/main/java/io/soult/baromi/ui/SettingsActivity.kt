@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
@@ -18,6 +20,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import io.soult.baromi.R
+import io.soult.baromi.backup.BackupManager
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.data.Category
 import io.soult.baromi.data.CategoryRepository
@@ -29,7 +32,10 @@ import io.soult.baromi.databinding.ActivitySettingsBinding
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.reminder.ReminderPermissions
 import io.soult.baromi.reminder.rearmAllReminders
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 /**
  * Module E — configure reminder times (add/remove within 1..8), manage rating categories, and
@@ -44,6 +50,17 @@ class SettingsActivity : AppCompatActivity() {
     private val reminders by lazy { ReminderRepository(db.reminderTimeDao()) }
     private val tags by lazy { TagRepository(db.tagDao()) }
     private val categories by lazy { CategoryRepository(db.categoryDao()) }
+    private val backup by lazy { BackupManager(db) }
+
+    // SAF pickers: create a document to save the backup into, and open one to import from.
+    private val exportBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            uri?.let(::writeBackup)
+        }
+    private val importBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(::readBackup)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +73,12 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonAddCategory.setOnClickListener { addCategory() }
         binding.buttonAddTag.setOnClickListener { addTag() }
         binding.buttonGrantPermissions.setOnClickListener { grantPermissions() }
+        binding.buttonExportBackup.setOnClickListener {
+            exportBackupLauncher.launch("baromi-backup-${LocalDate.now()}.json")
+        }
+        binding.buttonImportBackup.setOnClickListener {
+            importBackupLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/*"))
+        }
         setupThemeToggle()
 
         // Re-attach the result listener if a picker dialog survived a configuration change.
@@ -275,6 +298,45 @@ class SettingsActivity : AppCompatActivity() {
     private fun removeTag(tag: Tag) {
         lifecycleScope.launch {
             if (tags.remove(tag)) renderTags() else toast(R.string.tag_in_use)
+        }
+    }
+
+    private fun writeBackup(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val json = backup.exportJson()
+                withContext(Dispatchers.IO) {
+                    contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                        ?: throw IllegalStateException("no output stream for $uri")
+                }
+                toast(R.string.backup_export_done)
+            } catch (e: Exception) {
+                toast(R.string.backup_export_failed)
+            }
+        }
+    }
+
+    private fun readBackup(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val json = withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+                        ?: throw IllegalStateException("no input stream for $uri")
+                }
+                val result = backup.importJson(json)
+                // Imported reminder times need arming, and the lists may have grown.
+                rearmAllReminders(applicationContext)
+                renderReminders()
+                renderCategories()
+                renderTags()
+                Toast.makeText(
+                    this@SettingsActivity,
+                    getString(R.string.backup_import_done, result.imported, result.skipped),
+                    Toast.LENGTH_LONG,
+                ).show()
+            } catch (e: Exception) {
+                toast(R.string.backup_import_failed)
+            }
         }
     }
 

@@ -1,12 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed-icon (Android 13+) silhouette: the "B" shape only; the launcher supplies the tint. -->
+<!--
+  Themed-icon (Android 13+) silhouette: the lowercase "b" with its bowl counter as a hole and the
+  barometer needle as a single-colour mark. The launcher supplies the tint; keep everything one
+  colour. Same group scale as the foreground so the themed and colour icons register.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#000000"
-        android:fillType="evenOdd"
-        android:pathData="M39,32 H57 C70,32 70,52 57,52 C73,54 73,76 55,76 H39 Z M52,40 H56 C62,40 62,48 56,48 H52 Z M52,59 H57 C65,59 65,69 57,69 H52 Z" />
+    <group
+        android:name="mark"
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.86"
+        android:scaleY="0.86">
+        <!-- stem -->
+        <path
+            android:fillColor="#000000"
+            android:pathData="M35,14 H42 A3,3 0 0 1 45,17 V87 A3,3 0 0 1 42,90 H35 A3,3 0 0 1 32,87 V17 A3,3 0 0 1 35,14 Z" />
+        <!-- bowl ring with counter hole -->
+        <path
+            android:fillColor="#000000"
+            android:fillType="evenOdd"
+            android:pathData="M32,64 A25,25 0 1 1 82,64 A25,25 0 1 1 32,64 Z M43.5,64 A13.5,13.5 0 1 0 70.5,64 A13.5,13.5 0 1 0 43.5,64 Z" />
+        <!-- dial scale arc -->
+        <path
+            android:strokeColor="#000000"
+            android:strokeWidth="1.8"
+            android:pathData="M46,65 Q57,49 68,65" />
+        <!-- needle -->
+        <path
+            android:fillColor="#000000"
+            android:pathData="M58.6,69 L55.4,67 L66,54 Z" />
+        <!-- hub -->
+        <path
+            android:fillColor="#000000"
+            android:pathData="M54,68 A3,3 0 1 1 60,68 A3,3 0 1 1 54,68 Z" />
+    </group>
 </vector>

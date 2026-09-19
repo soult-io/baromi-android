@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baromi affect face ic_face_anxiety_4: single-colour line face, tinted at runtime by the button. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:strokeColor="#000000" android:strokeWidth="2.4" android:strokeLineCap="round" android:pathData="M4,24 A20,20 0 1 1 44,24 A20,20 0 1 1 4,24 Z" />
+    <path android:fillColor="#000000" android:pathData="M14.7,20 A1.8,1.8 0 1 1 18.3,20 A1.8,1.8 0 1 1 14.7,20 Z" />
+    <path android:fillColor="#000000" android:pathData="M29.7,20 A1.8,1.8 0 1 1 33.3,20 A1.8,1.8 0 1 1 29.7,20 Z" />
+    <path android:strokeColor="#000000" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M16.5,30 Q24,34 31.5,30" />
+</vector>

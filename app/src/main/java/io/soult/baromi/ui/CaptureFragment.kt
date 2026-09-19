@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
@@ -112,7 +114,7 @@ class CaptureFragment : Fragment() {
     }
 
     private fun addCategoryRow(container: LinearLayout, category: Category) {
-        val emojis = CategoryDefs.emojisFor(category)
+        val icons = CategoryDefs.iconsFor(category)
         val labels = CategoryDefs.labelsFor(category)
 
         val caption = TextView(requireContext()).apply {
@@ -131,7 +133,12 @@ class CaptureFragment : Fragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(4); bottomMargin = dp(8) }
         }
-        emojis.forEachIndexed { index, emoji -> group.addView(emojiButton(emoji, index + 1, labels[index])) }
+        if (icons != null) {
+            icons.forEachIndexed { index, iconRes -> group.addView(faceButton(iconRes, index + 1, labels[index])) }
+        } else {
+            val emojis = CategoryDefs.emojisFor(category)
+            emojis.forEachIndexed { index, emoji -> group.addView(emojiButton(emoji, index + 1, labels[index])) }
+        }
         group.addOnButtonCheckedListener { checkedGroup, _, _ ->
             val checkedId = checkedGroup.checkedButtonId
             val value = if (checkedId == View.NO_ID) null else checkedGroup.findViewById<View>(checkedId)?.tag as? Int
@@ -148,6 +155,24 @@ class CaptureFragment : Fragment() {
             id = View.generateViewId()
             text = emoji
             textSize = 20f
+            tag = value
+            contentDescription = label
+            insetTop = 0
+            insetBottom = 0
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+    // Built-in categories use custom face icons. text=null makes MaterialButton centre the icon;
+    // iconTint follows textColors so the face matches the button's foreground (and its states).
+    private fun faceButton(@DrawableRes iconRes: Int, value: Int, label: String): MaterialButton =
+        MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            id = View.generateViewId()
+            icon = AppCompatResources.getDrawable(requireContext(), iconRes)
+            iconSize = dp(30)
+            iconPadding = 0
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            iconTint = textColors
+            text = null
             tag = value
             contentDescription = label
             insetTop = 0

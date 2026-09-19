@@ -28,8 +28,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The check-in screen (Check-in tab). One row per enabled category — five emoji (built-in faces or
- * number keycaps) mapped to the 1..5 scale. Save unlocks once every enabled category has a value.
+ * The check-in screen (Check-in tab). One row per enabled category — five options (custom face
+ * icons for built-in categories, number keycaps for custom) mapped to the 1..5 scale. Save unlocks
+ * once every enabled category has a value.
  */
 class CaptureFragment : Fragment() {
 

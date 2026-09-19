@@ -1,6 +1,5 @@
 package io.soult.baromi.data
 
-import androidx.annotation.DrawableRes
 import io.soult.baromi.R
 
 /**
@@ -11,7 +10,7 @@ import io.soult.baromi.R
 object CategoryDefs {
 
     private data class Def(
-        @DrawableRes val icons: List<Int>,
+        val icons: List<Int>,
         val labels: List<String>,
     )
 
@@ -52,7 +51,6 @@ object CategoryDefs {
     private val NUMBER_LABELS = listOf("1", "2", "3", "4", "5")
 
     /** Drawable icons for a built-in category's 1..5 options, or null for a custom category. */
-    @DrawableRes
     fun iconsFor(category: Category): List<Int>? =
         category.key?.let { BUILTIN[it]?.icons }
 

@@ -86,7 +86,7 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
                     ImageView(context).apply {
                         setImageResource(icons[value - 1])
                         layoutParams = LinearLayout.LayoutParams(size, size)
-                        imageTintList = ColorStateList.valueOf(themeColor(context, com.google.android.material.R.attr.colorPrimary))
+                        imageTintList = ColorStateList.valueOf(themeColor(context, androidx.appcompat.R.attr.colorPrimary))
                         contentDescription = "${category.name}: ${labels[value - 1]}"
                     },
                 )

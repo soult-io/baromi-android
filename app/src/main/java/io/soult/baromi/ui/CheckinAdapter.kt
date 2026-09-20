@@ -62,6 +62,7 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
             categories.forEach { category ->
                 byCategory[category.id]?.let { value -> axesRow.addView(axisCell(axesRow.context, category, value)) }
             }
+            binding.axesScroll.scrollTo(0, 0) // a recycled row could keep a prior scroll-X
 
             binding.commentText.textOrGone(c.comment?.takeUnless { it.isBlank() })
             binding.tagsText.textOrGone(row.tags.map { it.label }.sorted().joinToString("  ·  "))

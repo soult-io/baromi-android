@@ -27,8 +27,6 @@
     <string name="new_tag_hint">New tag</string>
     <string name="add_tag">Add</string>
     <string name="remove">Remove</string>
-    <string name="enable">Enable</string>
-    <string name="disable">Disable</string>
     <string name="categories_header">Categories</string>
     <string name="new_category_hint">New category</string>
     <string name="add_category">Add</string>

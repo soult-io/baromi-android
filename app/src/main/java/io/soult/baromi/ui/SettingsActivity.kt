@@ -1,22 +1,26 @@
 package io.soult.baromi.ui
 
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import android.Manifest
+import android.content.res.ColorStateList
 import android.content.pm.PackageManager
 import android.os.Build
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import io.soult.baromi.R
@@ -257,7 +261,12 @@ class SettingsActivity : AppCompatActivity() {
             } else {
                 categories.disableUnlessLast(category)
             }
-            if (ok) renderCategories() else showLastCategoryAlert()
+            if (ok) {
+                renderCategories()
+            } else {
+                showLastCategoryAlert()
+                renderCategories() // re-sync the switch, which the tap already flipped
+            }
         }
     }
 
@@ -344,30 +353,39 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun toast(resId: Int) = Toast.makeText(this, resId, Toast.LENGTH_SHORT).show()
 
+    // A reminder-time row: clock + time on a rounded surface, with a delete button.
     private fun listRow(label: String, onRemove: () -> Unit): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setBackgroundResource(R.drawable.bg_settings_row)
+            setPadding(dp(14), dp(8), dp(6), dp(8))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(8) }
         }
+        row.addView(
+            ImageView(this).apply {
+                setImageResource(R.drawable.ic_reminder_time)
+                imageTintList = ColorStateList.valueOf(themeColor(androidx.appcompat.R.attr.colorPrimary))
+                layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(14) }
+            },
+        )
         row.addView(
             TextView(this).apply {
                 text = label
-                textSize = 18f
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             },
         )
-        row.addView(
-            MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = getString(R.string.remove)
-                setOnClickListener { onRemove() }
-            },
-        )
+        row.addView(iconButton(R.drawable.ic_delete, getString(R.string.remove), onRemove))
         return row
     }
 
     /**
-     * A manageable list row: a name, an Enable/Disable toggle, and (custom items only) a Remove
-     * button. Disabled items are dimmed. Built-ins pass canDelete=false so they can't be deleted.
+     * A manageable list row: a name, an on/off switch, and (custom items only) a delete button,
+     * with a bottom divider. Disabled items are dimmed. Built-ins pass canDelete=false.
      */
     private fun manageRow(
         label: String,
@@ -376,37 +394,67 @@ class SettingsActivity : AppCompatActivity() {
         onToggle: (Boolean) -> Unit,
         onRemove: () -> Unit,
     ): View {
+        val wrapper = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+        }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(6), 0, dp(6))
         }
         row.addView(
             TextView(this).apply {
                 text = label
-                textSize = 18f
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
                 alpha = if (enabled) 1f else 0.5f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             },
         )
         row.addView(
-            MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = getString(if (enabled) R.string.disable else R.string.enable)
+            SwitchMaterial(this).apply {
+                isChecked = enabled
+                contentDescription = label
+                // The tap flips the switch visually; onToggle applies it (a blocked disable re-renders
+                // to reset it). A click listener avoids the set-isChecked-fires-the-listener pitfall.
                 setOnClickListener { onToggle(!enabled) }
             },
         )
         if (canDelete) {
-            row.addView(
-                MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = getString(R.string.remove)
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                    ).apply { marginStart = (8 * resources.displayMetrics.density).toInt() }
-                    setOnClickListener { onRemove() }
-                },
-            )
+            row.addView(iconButton(R.drawable.ic_delete, getString(R.string.remove), onRemove))
         }
-        return row
+        wrapper.addView(row)
+        wrapper.addView(
+            View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
+                setBackgroundColor(themeColor(com.google.android.material.R.attr.colorOutlineVariant))
+            },
+        )
+        return wrapper
+    }
+
+    private fun iconButton(iconRes: Int, description: String, onClick: () -> Unit): View =
+        ImageButton(this).apply {
+            setImageResource(iconRes)
+            contentDescription = description
+            imageTintList = ColorStateList.valueOf(themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
+            val tv = TypedValue()
+            theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, tv, true)
+            setBackgroundResource(tv.resourceId)
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+            setOnClickListener { onClick() }
+        }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private fun themeColor(attr: Int): Int {
+        val tv = TypedValue()
+        theme.resolveAttribute(attr, tv, true)
+        return if (tv.resourceId != 0) ContextCompat.getColor(this, tv.resourceId) else tv.data
     }
 
     private companion object {

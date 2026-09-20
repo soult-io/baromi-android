@@ -119,10 +119,30 @@ class HistoryFragmentTest {
 
     @Test
     fun charts_render_one_per_category_plus_tag_chart() {
-        val (view, _) = hostWithData()
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val fragment = HistoryFragment().apply { autoLoad = false }
+        activity.supportFragmentManager.beginTransaction()
+            .replace(R.id.navHostContainer, fragment)
+            .commitNow()
+        // Three distinct days clears the low-data threshold so the trend charts render.
+        val data = listOf(
+            checkin(today, 4, 3, 4, listOf("exercise")),
+            checkin(yesterday, 5, 5, 5, listOf("social")),
+            checkin(today.minusDays(2), 2, 2, 3, listOf("exercise")),
+        )
+        fragment.renderForTest(data, categories)
+        val view = fragment.requireView()
         // Per category: a title TextView + a BarChartView; plus a tag title + tag chart = 3*2 + 2.
         assertEquals(8, view.findViewById<LinearLayout>(R.id.chartsList).childCount)
         assertEquals(View.GONE, view.findViewById<View>(R.id.chartsEmpty).visibility)
+    }
+
+    @Test
+    fun charts_show_guidance_when_too_few_days() {
+        // hostWithData spans only two distinct days (< MIN_CHART_DAYS), so charts are gated.
+        val (view, _) = hostWithData()
+        assertEquals(0, view.findViewById<LinearLayout>(R.id.chartsList).childCount)
+        assertEquals(View.VISIBLE, view.findViewById<View>(R.id.chartsEmpty).visibility)
     }
 
     @Test

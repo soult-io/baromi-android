@@ -12,8 +12,21 @@
         android:orientation="vertical"
         android:padding="16dp">
         <TextView android:id="@+id/timeText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleSmall" />
-        <TextView android:id="@+id/axesText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyMedium" />
-        <TextView android:id="@+id/commentText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyMedium" android:visibility="gone" />
-        <TextView android:id="@+id/tagsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="?attr/colorOnSurfaceVariant" android:visibility="gone" />
+        <!-- Per-axis affect faces at their recorded values (name under each). Scrolls if a check-in
+             has more categories than fit the card width. Populated by CheckinAdapter. -->
+        <HorizontalScrollView
+            android:id="@+id/axesScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:scrollbars="none">
+            <LinearLayout
+                android:id="@+id/axesRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+        <TextView android:id="@+id/commentText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textAppearance="?attr/textAppearanceBodyMedium" android:visibility="gone" />
+        <TextView android:id="@+id/tagsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="?attr/colorOnSurfaceVariant" android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

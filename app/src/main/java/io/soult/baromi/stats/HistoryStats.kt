@@ -57,6 +57,25 @@ object HistoryStats {
     }
 
     /**
+     * How many distinct days within [window] (ending at [today]) have at least one check-in. Used to
+     * decide whether a daily-average trend chart has enough spread to be legible — a single day is
+     * one fat bar, which reads as broken.
+     */
+    fun activeDayCount(
+        checkins: List<CheckinWithDetails>,
+        zone: ZoneId,
+        window: Window,
+        today: LocalDate,
+    ): Int {
+        val start = windowStart(window, today)
+        return checkins.asSequence()
+            .map { dateOf(it.checkin.answeredTime, zone) }
+            .filter { inWindow(it, start, today) }
+            .distinct()
+            .count()
+    }
+
+    /**
      * Per-day mean value for [categoryId] across all history, keyed by date. The calendar slices
      * this by whichever month is on screen, so it computes the whole map once per category.
      */

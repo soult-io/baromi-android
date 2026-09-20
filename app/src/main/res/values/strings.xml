@@ -60,6 +60,7 @@
     <string name="window_month">30d</string>
     <string name="window_all">All</string>
     <string name="charts_empty">No check-ins yet.\nCharts appear once you start checking in.</string>
+    <string name="charts_low_data">A few more check-ins and your trends will appear here.\nKeep checking in across a few days.</string>
     <string name="chart_tag_frequency">Tag frequency</string>
     <string name="reminders_active">Reminders are on.</string>
     <string name="reminders_need_permission">Reminders won\'t fire until you grant permission.</string>

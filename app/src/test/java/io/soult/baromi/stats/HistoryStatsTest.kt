@@ -60,6 +60,20 @@ class HistoryStatsTest {
     }
 
     @Test
+    fun activeDayCount_counts_distinct_in_window_days_only() {
+        val d1 = LocalDate.of(2026, 7, 24)
+        val d2 = LocalDate.of(2026, 7, 26)
+        val data = listOf(
+            checkin(d1, mapOf(moodId to 2), hour = 9),
+            checkin(d1, mapOf(moodId to 4), hour = 18), // same day -> counts once
+            checkin(d2, mapOf(moodId to 5)),
+            checkin(LocalDate.of(2026, 7, 10), mapOf(moodId to 3)), // outside the WEEK window
+        )
+        assertEquals(2, HistoryStats.activeDayCount(data, zone, HistoryStats.Window.WEEK, today))
+        assertEquals(3, HistoryStats.activeDayCount(data, zone, HistoryStats.Window.ALL, today))
+    }
+
+    @Test
     fun dailyAverages_ignores_future_and_other_categories() {
         val data = listOf(
             checkin(LocalDate.of(2026, 7, 28), mapOf(moodId to 5)), // after today

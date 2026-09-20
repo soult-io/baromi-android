@@ -206,9 +206,15 @@ class HistoryFragment : Fragment() {
         val b = binding ?: return
         val list = b.chartsList
         list.removeAllViews()
-        val empty = items.isEmpty()
-        b.chartsEmpty.isVisible = empty
-        if (empty) return
+        // A daily-average trend chart needs a few distinct days to read as a trend; below that a
+        // single fat bar looks broken, so show guidance instead of a chart.
+        val activeDays = HistoryStats.activeDayCount(items, zone, window, today)
+        if (activeDays < MIN_CHART_DAYS) {
+            b.chartsEmpty.isVisible = true
+            b.chartsEmpty.setText(if (items.isEmpty()) R.string.charts_empty else R.string.charts_low_data)
+            return
+        }
+        b.chartsEmpty.isVisible = false
 
         for (category in enabledCategories) {
             val series = HistoryStats.dailyAverages(items, category.id, zone, window, today)
@@ -260,6 +266,8 @@ class HistoryFragment : Fragment() {
     }
 
     private companion object {
+        // Fewer distinct check-in days than this and the trend charts show guidance instead.
+        const val MIN_CHART_DAYS = 3
         val MONTH_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())
         val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
     }

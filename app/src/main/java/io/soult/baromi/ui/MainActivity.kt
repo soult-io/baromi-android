@@ -18,8 +18,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Host screen: a bottom bar switching between Check-in (capture) and History (journal). The top
- * app bar carries the title, a Settings action, and (on History) Export. Opened from the launcher
- * or a reminder notification (whose prompt time is passed to the initial Check-in fragment).
+ * app bar shows the brand title ("Baromi"), a Settings action, and (on History) Export. Opened from
+ * the launcher or a reminder notification (whose prompt time is passed to the initial Check-in
+ * fragment).
  */
 class MainActivity : AppCompatActivity() {
 
@@ -34,6 +35,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // Brand title in the app bar; the bottom-nav label already names the current tab, so the
+        // bar shows "Baromi" rather than duplicating "Check in" / "History".
+        title = getString(R.string.app_name)
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -42,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_history -> {
-                    show(HistoryFragment(), R.string.nav_history, history = true)
+                    show(HistoryFragment(), history = true)
                     true
                 }
                 else -> false
@@ -51,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             val promptTime = intent.getLongExtra(Notifications.EXTRA_PROMPT_TIME, 0L).takeIf { it > 0L }
-            show(CaptureFragment.newInstance(promptTime), R.string.nav_capture, history = false)
+            show(CaptureFragment.newInstance(promptTime), history = false)
         }
 
         if (savedInstanceState == null && !OnboardingActivity.isOnboarded(this)) {
@@ -90,14 +94,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             CaptureFragment.newInstance(null)
         }
-        show(fragment, R.string.nav_capture, history = false)
+        show(fragment, history = false)
     }
 
-    private fun show(fragment: Fragment, titleRes: Int, history: Boolean) {
+    private fun show(fragment: Fragment, history: Boolean) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.navHostContainer, fragment)
             .commit()
-        title = getString(titleRes)
         showingHistory = history
         invalidateOptionsMenu()
     }

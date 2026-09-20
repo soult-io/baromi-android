@@ -418,9 +418,9 @@ class SettingsActivity : AppCompatActivity() {
             SwitchMaterial(this).apply {
                 isChecked = enabled
                 contentDescription = label
-                // The tap flips the switch visually; onToggle applies it (a blocked disable re-renders
-                // to reset it). A click listener avoids the set-isChecked-fires-the-listener pitfall.
-                setOnClickListener { onToggle(!enabled) }
+                // Apply the switch's live post-tap state (not the captured `enabled`) so a rapid
+                // double-tap settles to the final tap; a blocked disable re-renders to reset it.
+                setOnClickListener { onToggle(isChecked) }
             },
         )
         if (canDelete) {

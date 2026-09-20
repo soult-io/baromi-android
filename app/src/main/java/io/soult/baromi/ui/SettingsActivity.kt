@@ -85,9 +85,8 @@ class SettingsActivity : AppCompatActivity() {
         (supportFragmentManager.findFragmentByTag(TIME_PICKER_TAG) as? MaterialTimePicker)
             ?.let(::attachTimePickerListener)
 
-        ReminderPermissions.requestNotificationPermissionIfNeeded(this)
-        ReminderPermissions.promptForExactAlarmIfNeeded(this)
-
+        // No cold permission prompt on open: the reminder status + "Grant permission" button surface
+        // it when needed, and adding a reminder time primes the notification permission in context.
         renderReminders()
         renderCategories()
         renderTags()
@@ -209,6 +208,9 @@ class SettingsActivity : AppCompatActivity() {
                 ReminderRepository.AddResult.ADDED -> {
                     rearmAllReminders(applicationContext)
                     renderReminders()
+                    // Contextual prime: the user just asked for a reminder, so request the permission
+                    // it needs now (a dialog). Exact-alarm access stays behind the Grant button.
+                    ReminderPermissions.requestNotificationPermissionIfNeeded(this@SettingsActivity)
                 }
                 ReminderRepository.AddResult.DUPLICATE -> toast(R.string.reminder_duplicate)
                 ReminderRepository.AddResult.MAX_REACHED -> toast(R.string.reminder_max_reached)

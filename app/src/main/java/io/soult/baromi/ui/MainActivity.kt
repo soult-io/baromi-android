@@ -12,7 +12,6 @@ import io.soult.baromi.R
 import io.soult.baromi.databinding.ActivityMainBinding
 import io.soult.baromi.export.exportAndShareCsv
 import io.soult.baromi.notify.Notifications
-import io.soult.baromi.reminder.ReminderPermissions
 import io.soult.baromi.reminder.rearmAllReminders
 import kotlinx.coroutines.launch
 
@@ -63,7 +62,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         Notifications.ensureChannel(this)
-        ReminderPermissions.requestNotificationPermissionIfNeeded(this)
+        // The notification permission is primed in context — via onboarding's "Enable reminders" and
+        // when a reminder time is added in Settings — not cold-requested on every launch.
     }
 
     override fun onStart() {

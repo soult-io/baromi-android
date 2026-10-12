@@ -1,0 +1,17 @@
+Baromi is a simple, private way to check in with yourself each day.
+
+In under a minute, note how you're doing across a few clear scales — mood, energy, and how calm or anxious you feel — add an optional comment and tags, and let Baromi keep a gentle record over time. Reminders nudge you at the times you choose, so checking in becomes an easy habit.
+
+Baromi is built around your privacy: everything stays on your device. There are no accounts, no sign-in, and no internet access — the app has no network permission, so nothing you write ever leaves your phone unless you export it.
+
+Features
+• Quick daily check-ins for mood, energy, and calm/anxiety — plus up to 3 custom categories of your own
+• Optional comments and tags to capture context (poor sleep, exercise, social, and more)
+• Gentle, configurable reminders
+• History, a calendar heat-map, and simple charts to help you notice patterns over time
+• Backup & restore, plus CSV export — your data is yours to keep, move between devices, or share with someone you trust
+• Light and dark themes
+• Completely offline and private — no ads, no tracking, no account
+• Free and open source under the GNU GPL v3 or later
+
+Baromi is a personal wellbeing journal to help you check in and notice patterns. It is not a medical device and does not provide diagnosis or treatment. If you are struggling, please reach out to a qualified professional or a local support service.

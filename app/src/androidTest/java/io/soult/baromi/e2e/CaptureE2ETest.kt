@@ -12,6 +12,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.isNotEnabled
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -57,9 +58,10 @@ class CaptureE2ETest {
     fun choose_all_axes_then_save_records_and_appears_in_history() {
         onView(withId(R.id.buttonSave)).check(matches(isNotEnabled()))
 
-        onView(withText("😄")).perform(click()) // mood 5
-        onView(withText("⚡")).perform(click())        // energy 5
-        onView(withText("😌")).perform(click())  // anxiety 5
+        // Built-in categories render face-icon buttons with no text; each is named by its label.
+        onView(withContentDescription("very good")).perform(click()) // mood 5
+        onView(withContentDescription("energized")).perform(click()) // energy 5
+        onView(withContentDescription("very calm")).perform(click()) // anxiety 5
 
         onView(withId(R.id.buttonSave)).check(matches(isEnabled())).perform(click())
 

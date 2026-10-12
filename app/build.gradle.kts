@@ -16,8 +16,8 @@ android {
         applicationId = "io.soult.baromi"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.0"
+        versionCode = 6
+        versionName = "1.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -53,6 +53,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    // Keep AGP's encrypted dependency report out of the APK signing block. F-Droid builds Baromi from
+    // source and flags that block; Google Play still gets the report through the app bundle.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = true
     }
 
     buildFeatures {

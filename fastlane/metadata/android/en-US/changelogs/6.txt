@@ -1,0 +1,2 @@
+• Baromi is now free and open source under the GNU GPL v3 or later
+• Library updates

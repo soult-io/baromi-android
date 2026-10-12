@@ -12,27 +12,18 @@ on:
 permissions:
   contents: read
 
-# Fork-safety model. THIS REPO IS PRIVATE, so there is no untrusted-fork surface: a pull request can
-# only come from someone who already has access to the repo. Every job therefore runs on the
-# self-hosted FRAME-DESK runner, which costs no billable minutes. Signing secrets live ONLY in the
-# release job (GitHub-hosted, tag-triggered).
-#
-# IF THIS REPO IS EVER MADE PUBLIC, move the `check` job back to `runs-on: ubuntu-latest` before
-# flipping the switch — otherwise a fork PR's untrusted code executes on the self-hosted runner. Also
-# enable "Require approval for all outside collaborators" (Settings → Actions → General → Fork pull
-# request workflows). The heavyweight build + instrumented jobs are already gated to push events on
-# THIS repo (github.repository), so a fork PR can never select them either way.
+# Fork-safety model (public repo). PR checks run on GitHub-hosted runners (ephemeral, secret-free —
+# safe for untrusted fork code; public repos get them free). The heavyweight build + instrumented jobs
+# run on the self-hosted FRAME-DESK runner and are gated to push events on THIS repo
+# (github.repository), so a fork PR can never select it. Pair this with the repo Actions setting
+# "Require approval for all outside collaborators" (Settings → Actions → General → Fork pull request
+# workflows), because a fork PR can edit this file. Signing secrets live ONLY in the release job
+# (GitHub-hosted, tag-triggered).
 jobs:
-  # Quick checks on PRs — self-hosted: private repo, so no fork surface, and GitHub-hosted minutes on
-  # a private repo are billable. A batch of dependabot PRs exhausted the 2,000-minute monthly
-  # allowance, and past that GitHub fails the job at its upload step with a misleading "Artifact
-  # storage quota has been hit" (storage was in fact near-empty).
+  # Quick checks on PRs — runs on GitHub-hosted (safe for public repo forks)
   check:
     if: github.event_name == 'pull_request'
-    runs-on: [self-hosted, linux, android]
-
-    env:
-      ANDROID_HOME: /opt/android-sdk
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -48,10 +39,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # The android-actions/setup-android step that used to sit here existed only because the
-      # GitHub-hosted image did not ship baromi's compileSdk. FRAME-DESK already has it — the build
-      # job on the same runner provisions nothing and succeeds — so it is no longer needed.
-      # No actions/cache either: ~/.gradle persists between runs on the self-hosted runner.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: gradle-
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true

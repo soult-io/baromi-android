@@ -1,0 +1,1 @@
+• No changes in the app. The release is now signed so that F-Droid can verify it was built from this source code.

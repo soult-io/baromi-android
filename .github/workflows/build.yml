@@ -209,7 +209,14 @@ jobs:
         run: |
           mkdir -p signed
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -V | tail -1)
+          # Reproducible builds (F-Droid): F-Droid rebuilds the APK from source and copies our signature
+          # onto it, so signing must leave every ZIP entry byte-for-byte as AGP wrote it. v1 (JAR)
+          # signing and apksigner's default re-alignment both rewrite entries; minSdk 26 needs only v2/v3.
           $APKSIGNER sign \
+            --v1-signing-enabled false \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --alignment-preserved true \
             --ks baromi-release.jks \
             --ks-pass env:BAROMI_KEYSTORE_PASSWORD \
             --ks-key-alias "$BAROMI_KEY_ALIAS" \

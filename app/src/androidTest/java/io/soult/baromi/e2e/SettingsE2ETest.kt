@@ -13,6 +13,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
+import androidx.test.espresso.matcher.ViewMatchers.withAlpha
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -24,6 +25,7 @@ import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.ui.MainActivity
+import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.containsString
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -92,6 +94,11 @@ class SettingsE2ETest {
             onView(withText("Reminder times")).check(matches(isDisplayed()))
         }
 
+        // The category rows are built after a Room read; wait for them, not just the header.
+        Waits.waitUntil {
+            onView(withContentDescription("Mood")).perform(scrollTo()).check(matches(isDisplayed()))
+        }
+
         // Disable two of the three built-in categories.
         disableCategory("Mood")
         disableCategory("Energy")
@@ -122,11 +129,21 @@ class SettingsE2ETest {
         }
     }
 
-    /** Taps the given category's switch (named by its label) and waits for it to read off. */
+    /**
+     * Taps the given category's switch (named by its label) and waits until the change is stored.
+     * The tap flips the switch at once, so wait on the dimmed label that only the post-save
+     * re-render sets.
+     */
     private fun disableCategory(name: String) {
         onView(withContentDescription(name)).perform(scrollTo(), click())
         Waits.waitUntil {
-            onView(withContentDescription(name)).check(matches(isNotChecked()))
+            onView(allOf(withText(name), withAlpha(DISABLED_ALPHA))).check(matches(isDisplayed()))
         }
+        onView(withContentDescription(name)).check(matches(isNotChecked()))
+    }
+
+    private companion object {
+        /** SettingsActivity.manageRow dims a disabled item's label to this alpha. */
+        const val DISABLED_ALPHA = 0.5f
     }
 }

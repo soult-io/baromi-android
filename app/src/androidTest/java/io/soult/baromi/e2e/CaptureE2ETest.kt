@@ -21,7 +21,6 @@ import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.ui.MainActivity
-import org.hamcrest.Matchers.containsString
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -59,6 +58,10 @@ class CaptureE2ETest {
         onView(withId(R.id.buttonSave)).check(matches(isNotEnabled()))
 
         // Built-in categories render face-icon buttons with no text; each is named by its label.
+        // The rows are built after a Room read, so wait for them before the first click.
+        Waits.waitUntil {
+            onView(withContentDescription("very good")).check(matches(isDisplayed()))
+        }
         onView(withContentDescription("very good")).perform(click()) // mood 5
         onView(withContentDescription("energized")).perform(click()) // energy 5
         onView(withContentDescription("very calm")).perform(click()) // anxiety 5
@@ -66,8 +69,10 @@ class CaptureE2ETest {
         onView(withId(R.id.buttonSave)).check(matches(isEnabled())).perform(click())
 
         Waits.waitUntil {
-            onView(withText(containsString("Mood 5"))).check(matches(isDisplayed()))
+            onView(withContentDescription("Mood: very good")).check(matches(isDisplayed()))
         }
+        onView(withContentDescription("Energy: energized")).check(matches(isDisplayed()))
+        onView(withContentDescription("Anxiety: very calm")).check(matches(isDisplayed()))
     }
 
     @Test

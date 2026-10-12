@@ -1,0 +1,4 @@
+• Settings redesigned into clear cards with switches
+• Notification permission is now asked for only when you turn on reminders or add a reminder time
+• Charts show a short guide instead of a chart until you have check-ins on at least 3 days
+• Library updates

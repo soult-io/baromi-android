@@ -8,8 +8,8 @@ CSV. The long-term payoff is a longitudinal record you can mine for patterns and
 clinician.
 
 - Package: `io.soult.baromi`
-- Min SDK 26 · Target SDK 34 · Kotlin 2.0 · Room
-- Local-only in v1 (no network permission).
+- Min SDK 26 · Target SDK 36 · Kotlin · Room
+- Local-only: no network permission. Your check-ins never leave the device unless you export them.
 
 ## Scale (frozen)
 
@@ -21,20 +21,18 @@ Every axis points the same way — **higher is the better state**:
 | Energy | drained | energized |
 | Anxiety | very anxious | very calm |
 
-## Status
-
-v1 is built in small modules. See `baromi-spec-v1.md` (agent workspace) for the full spec.
-
-- **Module A — data model (Room):** in progress. Entities `Checkin`, `Tag`, `CheckinTag`;
-  DAOs; frozen scale constant; construction guards on ranges and comment length.
-- Modules C/D (scheduler + notifications), B (check-in screen), E (settings), F (CSV export)
-  follow.
-
 ## Build & test
 
-Built on the Android toolchain via the `android-*` pipeline. Unit tests run on the JVM under
-Robolectric (Room in-memory) — no emulator required:
+Unit tests run on the JVM under Robolectric (Room in-memory), no emulator required:
 
 ```
 ./gradlew test
 ```
+
+## License
+
+Baromi is free software: you can redistribute it and/or modify it under the terms of the GNU
+General Public License as published by the Free Software Foundation, version 3 of the License, or
+(at your option) any later version. See [LICENSE](LICENSE).
+
+Copyright (C) 2026 SOULT IO LTD

@@ -28,7 +28,7 @@ data class Category(
     companion object {
         const val MAX_CUSTOM = 3
 
-        /** Longest category name, in characters. The Settings input uses the same limit (maxLength). */
+        /** Longest category name, in characters. Settings applies it as the input's length filter. */
         const val MAX_NAME_LENGTH = 40
 
         /**

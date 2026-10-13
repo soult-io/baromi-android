@@ -30,6 +30,19 @@ class BackupManagerTest {
     @After
     fun teardown() = dbs.forEach { it.close() }
 
+    private fun backup(
+        categories: List<BackupCategory> = emptyList(),
+        checkins: List<BackupCheckin> = emptyList(),
+        reminderTimes: List<BackupReminder> = emptyList(),
+    ) = BackupData(
+        scaleVersion = 2,
+        exportedAt = 0L,
+        categories = categories,
+        tags = emptyList(),
+        reminderTimes = reminderTimes,
+        checkins = checkins,
+    )
+
     // Seeds mood+energy categories and a "poor sleep" tag, returns (moodId, energyId, tagId).
     private suspend fun seed(db: BaromiDatabase, positionBase: Int = 0): Triple<Long, Long, Long> {
         val mood = db.categoryDao().insert(Category(key = "mood", name = "Mood", builtin = true, position = positionBase))
@@ -70,14 +83,7 @@ class BackupManagerTest {
     @Test
     fun import_caps_reminder_times_at_the_daily_max() = runTest {
         val target = newDb()
-        val data = BackupData(
-            scaleVersion = 2,
-            exportedAt = 0L,
-            categories = emptyList(),
-            tags = emptyList(),
-            reminderTimes = (0 until 12).map { BackupReminder(hour = it, minute = 0) },
-            checkins = emptyList(),
-        )
+        val data = backup(reminderTimes = (0 until 12).map { BackupReminder(hour = it, minute = 0) })
         BackupManager(target).import(data)
         assertEquals(ReminderTime.MAX_PER_DAY, target.reminderTimeDao().getAll().size)
     }
@@ -110,12 +116,8 @@ class BackupManagerTest {
     fun import_shortens_category_names_over_the_length_limit() = runTest {
         val target = newDb()
         val longName = "n".repeat(Category.MAX_NAME_LENGTH + 25)
-        val data = BackupData(
-            scaleVersion = 2,
-            exportedAt = 0L,
+        val data = backup(
             categories = listOf(BackupCategory(id = 9, key = null, name = longName, builtin = false, enabled = true, position = 5)),
-            tags = emptyList(),
-            reminderTimes = emptyList(),
             checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 5000L, comment = null, locked = false, values = listOf(BackupValue(9, 2)), tagIds = emptyList())),
         )
         BackupManager(target).import(data)
@@ -131,14 +133,7 @@ class BackupManagerTest {
         val target = newDb()
         val longName = "m".repeat(Category.MAX_NAME_LENGTH + 5) // stored by an import from before the limit
         target.categoryDao().insert(Category(key = null, name = longName, builtin = false, position = 5))
-        val data = BackupData(
-            scaleVersion = 2,
-            exportedAt = 0L,
-            categories = listOf(BackupCategory(id = 7, key = null, name = longName, builtin = false, enabled = true, position = 5)),
-            tags = emptyList(),
-            reminderTimes = emptyList(),
-            checkins = emptyList(),
-        )
+        val data = backup(categories = listOf(BackupCategory(id = 7, key = null, name = longName, builtin = false, enabled = true, position = 5)))
         BackupManager(target).import(data)
         assertEquals(1, target.categoryDao().getAll().count { !it.builtin })
     }
@@ -147,12 +142,8 @@ class BackupManagerTest {
     fun builtin_with_a_blank_name_in_the_backup_still_matches_by_key() = runTest {
         val target = newDb()
         target.categoryDao().insert(Category(key = "mood", name = "Mood", builtin = true, position = 0))
-        val data = BackupData(
-            scaleVersion = 2,
-            exportedAt = 0L,
+        val data = backup(
             categories = listOf(BackupCategory(id = 1, key = "mood", name = "  ", builtin = true, enabled = true, position = 0)),
-            tags = emptyList(),
-            reminderTimes = emptyList(),
             checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 7000L, comment = null, locked = false, values = listOf(BackupValue(1, 4)), tagIds = emptyList())),
         )
         BackupManager(target).import(data)
@@ -167,12 +158,8 @@ class BackupManagerTest {
         val exact = "p".repeat(Category.MAX_NAME_LENGTH)
         val exactId = target.categoryDao().insert(Category(key = null, name = exact, builtin = false, position = 5))
         target.categoryDao().insert(Category(key = null, name = exact + "suffix", builtin = false, position = 6))
-        val data = BackupData(
-            scaleVersion = 2,
-            exportedAt = 0L,
+        val data = backup(
             categories = listOf(BackupCategory(id = 3, key = null, name = exact, builtin = false, enabled = true, position = 5)),
-            tags = emptyList(),
-            reminderTimes = emptyList(),
             checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 8000L, comment = null, locked = false, values = listOf(BackupValue(3, 2)), tagIds = emptyList())),
         )
         BackupManager(target).import(data)

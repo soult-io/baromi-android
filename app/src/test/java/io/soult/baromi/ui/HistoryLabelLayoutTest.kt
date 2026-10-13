@@ -13,6 +13,7 @@ import io.soult.baromi.data.Checkin
 import io.soult.baromi.data.CheckinValue
 import io.soult.baromi.data.CheckinWithDetails
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,7 +70,7 @@ class HistoryLabelLayoutTest {
 
     /** A one-word name must sit on a single line, unbroken and not ellipsized ("Energ" + "y" fails). */
     private fun assertFullyShown(label: TextView) {
-        assertTrue("'${label.text}' is ellipsized", !label.ellipsized())
+        assertFalse("'${label.text}' is ellipsized", label.ellipsized())
         assertEquals("'${label.text}' wraps mid-word", 1, label.layout.lineCount)
         val needed = label.paint.measureText(label.text.toString())
         val available = label.width - label.totalPaddingLeft - label.totalPaddingRight
@@ -101,12 +102,13 @@ class HistoryLabelLayoutTest {
 
     @Test
     fun columns_stay_between_56_and_88_dp() {
-        val ctx = context(1.0f)
-        val density = ctx.resources.displayMetrics.density
+        val minDp = 56f
+        val maxDp = 88f
+        val pxRoundingDp = 0.5f // dp() truncates to whole pixels
         labels(1.0f, builtins + longCustom).forEach { label ->
-            val cellWidthDp = (label.parent as View).width / density
-            assertTrue("column ${cellWidthDp}dp < 56", cellWidthDp >= 55.5f)
-            assertTrue("column ${cellWidthDp}dp > 88", cellWidthDp <= 88.5f)
+            val cellWidthDp = (label.parent as View).width / label.resources.displayMetrics.density
+            assertTrue("column ${cellWidthDp}dp < ${minDp}dp", cellWidthDp >= minDp - pxRoundingDp)
+            assertTrue("column ${cellWidthDp}dp > ${maxDp}dp", cellWidthDp <= maxDp + pxRoundingDp)
         }
     }
 

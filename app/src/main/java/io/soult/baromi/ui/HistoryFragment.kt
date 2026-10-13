@@ -154,7 +154,7 @@ class HistoryFragment : Fragment() {
         for (category in enabledCategories) {
             val chip = Chip(requireContext()).apply {
                 text = category.name
-                maxWidth = (CHIP_MAX_WIDTH_DP * resources.displayMetrics.density).toInt()
+                maxWidth = dp(CHIP_MAX_WIDTH_DP)
                 ellipsize = TextUtils.TruncateAt.END
                 isCheckable = true
                 id = View.generateViewId()
@@ -268,9 +268,10 @@ class HistoryFragment : Fragment() {
         binding = null
     }
 
-    companion object {
+    internal companion object {
         /** Widest a Calendar category chip may grow; a longer name ends in "…". */
-        internal const val CHIP_MAX_WIDTH_DP = 200
+        @VisibleForTesting
+        const val CHIP_MAX_WIDTH_DP = 200
 
         // Fewer distinct check-in days than this and the trend charts show guidance instead.
         private const val MIN_CHART_DAYS = 3

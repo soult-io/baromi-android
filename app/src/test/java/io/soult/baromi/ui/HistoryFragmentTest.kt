@@ -1,5 +1,6 @@
 package io.soult.baromi.ui
 
+import android.text.TextUtils
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -165,7 +166,7 @@ class HistoryFragmentTest {
         val (view, _) = hostWithData()
         val chip = view.findViewById<ChipGroup>(R.id.calendarCategoryChips).getChildAt(0) as Chip
         val density = view.resources.displayMetrics.density
-        assertEquals(android.text.TextUtils.TruncateAt.END, chip.ellipsize)
+        assertEquals(TextUtils.TruncateAt.END, chip.ellipsize)
         assertEquals((HistoryFragment.CHIP_MAX_WIDTH_DP * density).toInt(), chip.maxWidth)
     }
 }

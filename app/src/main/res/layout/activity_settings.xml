@@ -168,8 +168,7 @@
                             android:id="@+id/inputNewCategory"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="text|textCapSentences|textNoSuggestions"
-                            android:maxLength="40" />
+                            android:inputType="text|textCapSentences|textNoSuggestions" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton

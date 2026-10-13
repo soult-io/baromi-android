@@ -60,6 +60,13 @@ class HistoryFragment : Fragment() {
     @VisibleForTesting
     var autoLoad = true
 
+    /** Where History reads its data; tests swap in fixtures. */
+    @VisibleForTesting
+    var loader: suspend () -> Pair<List<CheckinWithDetails>, List<Category>> = {
+        val db = BaromiDatabase.getInstance(requireContext().applicationContext)
+        db.checkinDao().getAllWithDetails() to db.categoryDao().getAll()
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val b = FragmentHistoryBinding.inflate(inflater, container, false)
         binding = b
@@ -95,10 +102,17 @@ class HistoryFragment : Fragment() {
         b.modeToggle.check(R.id.btnList)
         b.windowToggle.check(R.id.btnMonth)
 
+    }
+
+    // Load every time History becomes visible, not only when its view is created: Settings is a
+    // separate activity, so coming back from it (category deleted or disabled, backup imported)
+    // restarts this fragment without recreating its view.
+    override fun onStart() {
+        super.onStart()
         if (autoLoad) {
             viewLifecycleOwner.lifecycleScope.launch {
-                val db = BaromiDatabase.getInstance(requireContext().applicationContext)
-                applyData(db.checkinDao().getAllWithDetails(), db.categoryDao().getAll())
+                val (items, categories) = loader()
+                applyData(items, categories)
             }
         }
     }
@@ -109,7 +123,10 @@ class HistoryFragment : Fragment() {
         this.categories = categories
         this.enabledCategories = categories.filter { it.enabled }
         this.loaded = true
-        this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
+        // Keep the user's calendar category across a reload while it is still enabled.
+        if (enabledCategories.none { it.id == calendarCategoryId }) {
+            this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
+        }
         renderList()
         buildCategoryChips()
         renderCalendar()

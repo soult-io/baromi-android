@@ -101,6 +101,17 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
+      # R8 mapping for this build (the APK and AAB come from the same R8 run). Published with each
+      # GitHub Release so crash traces from the GitHub APK can be de-obfuscated; Play gets the same
+      # file inside the AAB.
+      - name: Upload R8 mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: baromi-release-mapping
+          path: app/build/outputs/mapping/release/mapping.txt
+          retention-days: 90
+          if-no-files-found: error
+
       - name: Upload lint results
         if: always()
         uses: actions/upload-artifact@v4
@@ -195,6 +206,12 @@ jobs:
           name: baromi-release-aab
           path: aab/
 
+      - name: Download R8 mapping
+        uses: actions/download-artifact@v4
+        with:
+          name: baromi-release-mapping
+          path: mapping/
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -245,6 +262,7 @@ jobs:
         run: |
           cd signed && sha256sum baromi-release.apk > baromi-release.apk.sha256
           cd ../signed-aab && sha256sum baromi-release.aab > baromi-release.aab.sha256
+          cd ../mapping && mv mapping.txt baromi-mapping.txt && sha256sum baromi-mapping.txt > baromi-mapping.txt.sha256
 
       - name: Create GitHub Release
         # Third-party action on the job that holds the signing secrets — pin to a commit SHA so a
@@ -256,6 +274,8 @@ jobs:
             signed/baromi-release.apk.sha256
             signed-aab/baromi-release.aab
             signed-aab/baromi-release.aab.sha256
+            mapping/baromi-mapping.txt
+            mapping/baromi-mapping.txt.sha256
           generate_release_notes: true
 
       - name: Cleanup keystore

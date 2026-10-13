@@ -62,13 +62,16 @@ class BackupManager(private val db: BaromiDatabase) {
             val byKey = local.filter { it.key != null }.associateBy { it.key!! }
             val byName = local.associateBy { it.name }
             for (bc in data.categories) {
-                val existing = bc.key?.let { byKey[it] } ?: byName[bc.name]
+                // A backup may come from anywhere: hold its names to the same length limit as Settings.
+                val name = Category.normalizeName(bc.name)
+                if (name.isEmpty()) continue
+                val existing = bc.key?.let { byKey[it] } ?: byName[name]
                 val localId = existing?.id ?: run {
                     val inserted = categoryDao.insert(
-                        Category(key = bc.key, name = bc.name, builtin = bc.builtin, enabled = bc.enabled, position = bc.position),
+                        Category(key = bc.key, name = name, builtin = bc.builtin, enabled = bc.enabled, position = bc.position),
                     )
                     // insert IGNOREs on the unique name index (returns -1); resolve by re-reading.
-                    if (inserted >= 0) inserted else categoryDao.getAll().firstOrNull { it.name == bc.name }?.id
+                    if (inserted >= 0) inserted else categoryDao.getAll().firstOrNull { it.name == name }?.id
                 }
                 if (localId != null) catIdMap[bc.id] = localId
             }

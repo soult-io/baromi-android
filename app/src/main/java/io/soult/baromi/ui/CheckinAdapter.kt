@@ -2,6 +2,7 @@ package io.soult.baromi.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -69,7 +70,9 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
         }
 
         // One axis: the recorded affect face (built-in categories) or its number (custom categories),
-        // with the category name beneath. Face + name replaces the old raw "Name value" text.
+        // with the category name beneath. The name decides the column width, held between
+        // LABEL_MIN_WIDTH_DP and LABEL_MAX_WIDTH_DP; a longer name wraps to 2 lines, then ends in "…".
+        // The full name stays in the text (and so for screen readers).
         private fun axisCell(context: Context, category: Category, value: Int): View {
             val cell = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -77,7 +80,7 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { marginEnd = dp(context, 18) }
+                ).apply { marginEnd = dp(context, 8) }
             }
             val icons = CategoryDefs.iconsFor(category)
             val labels = CategoryDefs.labelsFor(category)
@@ -105,9 +108,19 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
             cell.addView(
                 TextView(context).apply {
                     text = category.name
-                    gravity = Gravity.CENTER
+                    gravity = Gravity.CENTER_HORIZONTAL
                     setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelSmall)
                     setTextColor(themeColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                    minWidth = dp(context, LABEL_MIN_WIDTH_DP)
+                    maxWidth = dp(context, LABEL_MAX_WIDTH_DP)
+                    maxLines = LABEL_MAX_LINES
+                    ellipsize = TextUtils.TruncateAt.END
+                    // Without explicit params a vertical LinearLayout gives children MATCH_PARENT width,
+                    // which clipped every name to the icon's width ("Energ", "Anxie").
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
                 },
             )
             return cell
@@ -123,6 +136,9 @@ class CheckinAdapter : RecyclerView.Adapter<CheckinAdapter.VH>() {
         }
 
         private companion object {
+            const val LABEL_MIN_WIDTH_DP = 56
+            const val LABEL_MAX_WIDTH_DP = 88
+            const val LABEL_MAX_LINES = 2
             val FORMATTER: DateTimeFormatter =
                 DateTimeFormatter.ofPattern("EEE, MMM d  ·  HH:mm", Locale.getDefault()).withZone(ZoneId.systemDefault())
         }

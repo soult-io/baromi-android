@@ -56,10 +56,13 @@ class CategoryRepository(private val dao: CategoryDao) {
         true
     }
 
-    /** Adds a custom category. Rejects blank names and names containing ',' (the CSV column separator). */
+    /**
+     * Adds a custom category. Rejects blank names, names containing ',' (the CSV column separator)
+     * and names longer than [Category.MAX_NAME_LENGTH].
+     */
     suspend fun add(name: String): AddResult {
         val trimmed = name.trim()
-        if (trimmed.isEmpty() || trimmed.contains(',')) return AddResult.INVALID
+        if (trimmed.isEmpty() || trimmed.contains(',') || trimmed.length > Category.MAX_NAME_LENGTH) return AddResult.INVALID
         if (dao.customCount() >= Category.MAX_CUSTOM) return AddResult.MAX_REACHED
         val position = (dao.maxPosition() ?: -1) + 1
         val id = dao.insert(

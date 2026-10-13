@@ -159,4 +159,13 @@ class HistoryFragmentTest {
         assertEquals(0, view.findViewById<LinearLayout>(R.id.chartsList).childCount)
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.chartsEmpty).visibility)
     }
+
+    @Test
+    fun calendar_chips_cap_their_width_and_ellipsize() {
+        val (view, _) = hostWithData()
+        val chip = view.findViewById<ChipGroup>(R.id.calendarCategoryChips).getChildAt(0) as Chip
+        val density = view.resources.displayMetrics.density
+        assertEquals(android.text.TextUtils.TruncateAt.END, chip.ellipsize)
+        assertEquals((HistoryFragment.CHIP_MAX_WIDTH_DP * density).toInt(), chip.maxWidth)
+    }
 }

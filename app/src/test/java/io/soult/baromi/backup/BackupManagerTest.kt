@@ -105,4 +105,24 @@ class BackupManagerTest {
         val existing = target.checkinDao().getAllWithDetails().first { it.checkin.answeredTime == 1000L }
         assertEquals(4, existing.values.first { it.categoryId == tMood }.value)
     }
+
+    @Test
+    fun import_shortens_category_names_over_the_length_limit() = runTest {
+        val target = newDb()
+        val longName = "n".repeat(Category.MAX_NAME_LENGTH + 25)
+        val data = BackupData(
+            scaleVersion = 2,
+            exportedAt = 0L,
+            categories = listOf(BackupCategory(id = 9, key = null, name = longName, builtin = false, enabled = true, position = 5)),
+            tags = emptyList(),
+            reminderTimes = emptyList(),
+            checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 5000L, comment = null, locked = false, values = listOf(BackupValue(9, 2)), tagIds = emptyList())),
+        )
+        BackupManager(target).import(data)
+        val custom = target.categoryDao().getAll().single { !it.builtin }
+        assertEquals("n".repeat(Category.MAX_NAME_LENGTH), custom.name)
+        // The check-in's value is still attached to the (renamed) category.
+        val values = target.checkinDao().getAllWithDetails().single { it.checkin.answeredTime == 5000L }.values
+        assertEquals(custom.id, values.single().categoryId)
+    }
 }

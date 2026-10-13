@@ -157,4 +157,10 @@ class CategoryRepositoryTest {
         assertTrue(repo.removeUnlessLast(custom))
         assertFalse(repo.all().any { it.name == "Only" })
     }
+
+    @Test
+    fun add_enforces_the_name_length_limit() = runTest {
+        assertEquals(CategoryRepository.AddResult.INVALID, repo.add("x".repeat(Category.MAX_NAME_LENGTH + 1)))
+        assertEquals(CategoryRepository.AddResult.ADDED, repo.add("y".repeat(Category.MAX_NAME_LENGTH)))
+    }
 }

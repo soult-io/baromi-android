@@ -188,7 +188,7 @@ class HistoryFragmentTest {
         // Something changed elsewhere (e.g. a category deleted in Settings), then History is shown again.
         data = items.take(1)
         controller.pause().stop()
-        controller.start().resume()
+        controller.restart().start().resume()
         shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(2, loads)
@@ -206,5 +206,34 @@ class HistoryFragmentTest {
         val reloaded = view.findViewById<ChipGroup>(R.id.calendarCategoryChips)
         val checked = reloaded.findViewById<Chip>(reloaded.checkedChipId)
         assertEquals("Energy", checked.text.toString())
+    }
+
+    @Test
+    fun reload_refreshes_an_open_day_panel() {
+        val (view, fragment) = hostWithData()
+        view.findViewById<CalendarHeatmapView>(R.id.calendarHeatmap).onDayClick!!.invoke(today)
+        val panel = view.findViewById<RecyclerView>(R.id.dayDetailList)
+        assertEquals(2, panel.adapter!!.itemCount)
+
+        // Today's second check-in went away (e.g. replaced by a backup import), then History reloads.
+        fragment.renderForTest(items.drop(1), categories)
+
+        assertEquals(View.VISIBLE, view.findViewById<View>(R.id.dayDetailLabel).visibility)
+        assertEquals(1, panel.adapter!!.itemCount)
+    }
+
+    @Test
+    fun reload_falls_back_and_closes_the_day_panel_when_the_selected_category_is_disabled() {
+        val (view, fragment) = hostWithData()
+        val chips = view.findViewById<ChipGroup>(R.id.calendarCategoryChips)
+        chips.check((chips.getChildAt(1) as Chip).id) // Energy
+        view.findViewById<CalendarHeatmapView>(R.id.calendarHeatmap).onDayClick!!.invoke(today)
+
+        fragment.renderForTest(items, categories.map { if (it.id == energyId) it.copy(enabled = false) else it })
+
+        val reloaded = view.findViewById<ChipGroup>(R.id.calendarCategoryChips)
+        assertEquals("Mood", reloaded.findViewById<Chip>(reloaded.checkedChipId).text.toString())
+        assertEquals(View.GONE, view.findViewById<View>(R.id.dayDetailLabel).visibility)
+        assertEquals(0, view.findViewById<RecyclerView>(R.id.dayDetailList).adapter!!.itemCount)
     }
 }

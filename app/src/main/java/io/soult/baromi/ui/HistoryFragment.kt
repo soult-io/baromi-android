@@ -14,6 +14,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.room.withTransaction
 import com.google.android.material.chip.Chip
 import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
@@ -22,6 +23,7 @@ import io.soult.baromi.data.CheckinEditPolicy
 import io.soult.baromi.data.CheckinWithDetails
 import io.soult.baromi.databinding.FragmentHistoryBinding
 import io.soult.baromi.stats.HistoryStats
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -45,7 +47,8 @@ class HistoryFragment : Fragment() {
     private val dayDetailAdapter = CheckinAdapter()
 
     private val zone: ZoneId = ZoneId.systemDefault()
-    private val today: LocalDate = LocalDate.now(zone)
+    // Re-read on every load: a reload can happen after midnight on a long-lived fragment.
+    private var today: LocalDate = LocalDate.now(zone)
 
     private var items: List<CheckinWithDetails> = emptyList()
     private var categories: List<Category> = emptyList()
@@ -55,6 +58,8 @@ class HistoryFragment : Fragment() {
     private var currentMonth: YearMonth = YearMonth.from(today)
     private var calendarCategoryId: Long = -1L
     private var window: HistoryStats.Window = HistoryStats.Window.MONTH
+    private var selectedDay: LocalDate? = null
+    private var loadJob: Job? = null
 
     // Tests drive rendering directly via renderForTest and turn off the async DB load.
     @VisibleForTesting
@@ -64,7 +69,8 @@ class HistoryFragment : Fragment() {
     @VisibleForTesting
     var loader: suspend () -> Pair<List<CheckinWithDetails>, List<Category>> = {
         val db = BaromiDatabase.getInstance(requireContext().applicationContext)
-        db.checkinDao().getAllWithDetails() to db.categoryDao().getAll()
+        // One snapshot: a write between the two reads (e.g. a backup import) must not mix states.
+        db.withTransaction { db.checkinDao().getAllWithDetails() to db.categoryDao().getAll() }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -110,7 +116,9 @@ class HistoryFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         if (autoLoad) {
-            viewLifecycleOwner.lifecycleScope.launch {
+            // Only the newest load may render: a quick stop/start must not let an older one win.
+            loadJob?.cancel()
+            loadJob = viewLifecycleOwner.lifecycleScope.launch {
                 val (items, categories) = loader()
                 applyData(items, categories)
             }
@@ -123,14 +131,19 @@ class HistoryFragment : Fragment() {
         this.categories = categories
         this.enabledCategories = categories.filter { it.enabled }
         this.loaded = true
+        this.today = LocalDate.now(zone)
         // Keep the user's calendar category across a reload while it is still enabled.
-        if (enabledCategories.none { it.id == calendarCategoryId }) {
+        val categoryKept = enabledCategories.any { it.id == calendarCategoryId }
+        if (!categoryKept) {
             this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
         }
         renderList()
         buildCategoryChips()
         renderCalendar()
         renderCharts()
+        // An open day panel shows the new data, or closes if its category went away.
+        val day = selectedDay
+        if (day != null && categoryKept) showDayDetail(day) else clearDayDetail()
     }
 
     /** Test seam: render from supplied fixtures without the DB/coroutine. */
@@ -208,6 +221,7 @@ class HistoryFragment : Fragment() {
 
     private fun showDayDetail(date: LocalDate) {
         val b = binding ?: return
+        selectedDay = date
         val dayItems = items.filter {
             Instant.ofEpochMilli(it.checkin.answeredTime).atZone(zone).toLocalDate() == date
         }
@@ -218,6 +232,7 @@ class HistoryFragment : Fragment() {
 
     private fun clearDayDetail() {
         val b = binding ?: return
+        selectedDay = null
         b.dayDetailLabel.isVisible = false
         dayDetailAdapter.submit(emptyList(), categories)
     }

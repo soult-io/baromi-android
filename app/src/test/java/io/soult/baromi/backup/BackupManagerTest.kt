@@ -160,4 +160,23 @@ class BackupManagerTest {
         val values = target.checkinDao().getAllWithDetails().single { it.checkin.answeredTime == 7000L }.values
         assertEquals(mood.id, values.single().categoryId)
     }
+
+    @Test
+    fun exact_name_wins_over_a_long_name_with_the_same_start() = runTest {
+        val target = newDb()
+        val exact = "p".repeat(Category.MAX_NAME_LENGTH)
+        val exactId = target.categoryDao().insert(Category(key = null, name = exact, builtin = false, position = 5))
+        target.categoryDao().insert(Category(key = null, name = exact + "suffix", builtin = false, position = 6))
+        val data = BackupData(
+            scaleVersion = 2,
+            exportedAt = 0L,
+            categories = listOf(BackupCategory(id = 3, key = null, name = exact, builtin = false, enabled = true, position = 5)),
+            tags = emptyList(),
+            reminderTimes = emptyList(),
+            checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 8000L, comment = null, locked = false, values = listOf(BackupValue(3, 2)), tagIds = emptyList())),
+        )
+        BackupManager(target).import(data)
+        val values = target.checkinDao().getAllWithDetails().single { it.checkin.answeredTime == 8000L }.values
+        assertEquals(exactId, values.single().categoryId)
+    }
 }

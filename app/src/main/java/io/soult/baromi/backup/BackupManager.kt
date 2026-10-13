@@ -60,15 +60,16 @@ class BackupManager(private val db: BaromiDatabase) {
         run {
             val local = categoryDao.getAll()
             val byKey = local.filter { it.key != null }.associateBy { it.key!! }
-            // Keyed by the normalized name, so a stored name from before the length limit still matches
-            // the same name in a backup (re-importing must not duplicate it).
+            // Exact names first; then by normalized name, so a stored name from before the length limit
+            // still matches the same name in a backup (re-importing must not duplicate it).
+            val byExactName = local.associateBy { it.name }
             val byName = local.associateBy { Category.normalizeName(it.name) }
             for (bc in data.categories) {
                 // A backup may come from anywhere: hold its names to the same length limit as Settings.
                 val name = Category.normalizeName(bc.name)
                 val byKeyMatch = bc.key?.let { byKey[it] }
                 if (byKeyMatch == null && name.isEmpty()) continue
-                val existing = byKeyMatch ?: byName[name]
+                val existing = byKeyMatch ?: byExactName[bc.name.trim()] ?: byName[name]
                 val localId = existing?.id ?: run {
                     val inserted = categoryDao.insert(
                         Category(key = bc.key, name = name, builtin = bc.builtin, enabled = bc.enabled, position = bc.position),

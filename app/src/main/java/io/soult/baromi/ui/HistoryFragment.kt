@@ -36,8 +36,8 @@ import java.util.Locale
  * The History tab. A segmented control switches between three views over the same loaded data:
  * the chronological List (unchanged), a Calendar heatmap (a month tinted by a chosen category's
  * daily average, tap a day for its entries), and Charts (per-category daily-average bars plus tag
- * frequency, over a selectable window). All aggregation lives in [HistoryStats]; this fragment only
- * loads once and renders.
+ * frequency, over a selectable window). All aggregation lives in [HistoryStats]; this fragment
+ * loads on every start and renders.
  */
 class HistoryFragment : Fragment() {
 
@@ -61,12 +61,8 @@ class HistoryFragment : Fragment() {
     private var selectedDay: LocalDate? = null
     private var loadJob: Job? = null
 
-    // Tests drive rendering directly via renderForTest and turn off the async DB load.
-    @VisibleForTesting
-    var autoLoad = true
-
     /** Where History reads its data; tests swap in fixtures. */
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     var loader: suspend () -> Pair<List<CheckinWithDetails>, List<Category>> = {
         val db = BaromiDatabase.getInstance(requireContext().applicationContext)
         // One snapshot: a write between the two reads (e.g. a backup import) must not mix states.
@@ -107,7 +103,6 @@ class HistoryFragment : Fragment() {
 
         b.modeToggle.check(R.id.btnList)
         b.windowToggle.check(R.id.btnMonth)
-
     }
 
     // Load every time History becomes visible, not only when its view is created: Settings is a
@@ -115,13 +110,11 @@ class HistoryFragment : Fragment() {
     // restarts this fragment without recreating its view.
     override fun onStart() {
         super.onStart()
-        if (autoLoad) {
-            // Only the newest load may render: a quick stop/start must not let an older one win.
-            loadJob?.cancel()
-            loadJob = viewLifecycleOwner.lifecycleScope.launch {
-                val (items, categories) = loader()
-                applyData(items, categories)
-            }
+        // Only the newest load may render: a quick stop/start must not let an older one win.
+        loadJob?.cancel()
+        loadJob = viewLifecycleOwner.lifecycleScope.launch {
+            val (rows, cats) = loader()
+            applyData(rows, cats)
         }
     }
 
@@ -147,7 +140,7 @@ class HistoryFragment : Fragment() {
     }
 
     /** Test seam: render from supplied fixtures without the DB/coroutine. */
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun renderForTest(items: List<CheckinWithDetails>, categories: List<Category>) =
         applyData(items, categories)
 

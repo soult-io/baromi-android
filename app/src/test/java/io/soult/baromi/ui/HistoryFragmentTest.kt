@@ -1,5 +1,6 @@
 package io.soult.baromi.ui
 
+import android.os.Looper
 import android.text.TextUtils
 import android.view.View
 import android.widget.LinearLayout
@@ -21,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 /**
  * Drives the History views over fixed fixtures (no DB, via [HistoryFragment.renderForTest]) and
@@ -168,5 +170,41 @@ class HistoryFragmentTest {
         val density = view.resources.displayMetrics.density
         assertEquals(TextUtils.TruncateAt.END, chip.ellipsize)
         assertEquals((HistoryFragment.CHIP_MAX_WIDTH_DP * density).toInt(), chip.maxWidth)
+    }
+
+    @Test
+    fun returning_to_history_reloads_from_the_data_source() {
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        var loads = 0
+        var data = items
+        val fragment = HistoryFragment().apply { loader = { loads++; data to categories } }
+        controller.get().supportFragmentManager.beginTransaction()
+            .replace(R.id.navHostContainer, fragment)
+            .commitNow()
+        shadowOf(Looper.getMainLooper()).idle()
+        val list = fragment.requireView().findViewById<RecyclerView>(R.id.historyList)
+        assertEquals(3, list.adapter!!.itemCount)
+
+        // Something changed elsewhere (e.g. a category deleted in Settings), then History is shown again.
+        data = items.take(1)
+        controller.pause().stop()
+        controller.start().resume()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertEquals(2, loads)
+        assertEquals(1, list.adapter!!.itemCount)
+    }
+
+    @Test
+    fun reload_keeps_the_selected_calendar_category() {
+        val (view, fragment) = hostWithData()
+        val chips = view.findViewById<ChipGroup>(R.id.calendarCategoryChips)
+        chips.check((chips.getChildAt(1) as Chip).id) // Energy
+
+        fragment.renderForTest(items, categories) // a reload with the same categories
+
+        val reloaded = view.findViewById<ChipGroup>(R.id.calendarCategoryChips)
+        val checked = reloaded.findViewById<Chip>(reloaded.checkedChipId)
+        assertEquals("Energy", checked.text.toString())
     }
 }

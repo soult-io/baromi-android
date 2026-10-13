@@ -12,6 +12,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.isNotEnabled
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -20,7 +21,6 @@ import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
 import io.soult.baromi.reminder.AlarmScheduler
 import io.soult.baromi.ui.MainActivity
-import org.hamcrest.Matchers.containsString
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -57,15 +57,22 @@ class CaptureE2ETest {
     fun choose_all_axes_then_save_records_and_appears_in_history() {
         onView(withId(R.id.buttonSave)).check(matches(isNotEnabled()))
 
-        onView(withText("😄")).perform(click()) // mood 5
-        onView(withText("⚡")).perform(click())        // energy 5
-        onView(withText("😌")).perform(click())  // anxiety 5
+        // Built-in categories render face-icon buttons with no text; each is named by its label.
+        // The rows are built after a Room read, so wait for them before the first click.
+        Waits.waitUntil {
+            onView(withContentDescription("very good")).check(matches(isDisplayed()))
+        }
+        onView(withContentDescription("very good")).perform(click()) // mood 5
+        onView(withContentDescription("energized")).perform(click()) // energy 5
+        onView(withContentDescription("very calm")).perform(click()) // anxiety 5
 
         onView(withId(R.id.buttonSave)).check(matches(isEnabled())).perform(click())
 
         Waits.waitUntil {
-            onView(withText(containsString("Mood 5"))).check(matches(isDisplayed()))
+            onView(withContentDescription("Mood: very good")).check(matches(isDisplayed()))
         }
+        onView(withContentDescription("Energy: energized")).check(matches(isDisplayed()))
+        onView(withContentDescription("Anxiety: very calm")).check(matches(isDisplayed()))
     }
 
     @Test

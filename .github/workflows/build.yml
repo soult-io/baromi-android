@@ -164,7 +164,6 @@ jobs:
 
       - name: Run instrumented tests (Gradle Managed Device)
         run: ./gradlew :app:aospAtdDebugAndroidTest -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
-        continue-on-error: true
 
       - name: Upload test results
         if: always()

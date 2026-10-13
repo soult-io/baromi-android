@@ -1,0 +1,2 @@
+• History shows full category names under each face (no more "Energ" or "Anxie")
+• Long custom category names wrap to two lines and end in "…"

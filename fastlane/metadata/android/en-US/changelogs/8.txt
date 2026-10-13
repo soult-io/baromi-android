@@ -1,0 +1,1 @@
+• Smaller, faster app: release builds are now optimized

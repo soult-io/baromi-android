@@ -16,8 +16,8 @@ android {
         applicationId = "io.soult.baromi"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0.2"
+        versionCode = 8
+        versionName = "1.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -39,7 +39,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 shrinks and obfuscates the release build (Google Play flags apps below 25% DEX
+            // optimization). Room, AndroidX and Material ship their own keep rules; the app reaches
+            // nothing by reflection. AGP puts mapping.txt in the bundle, so Play de-obfuscates crashes.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

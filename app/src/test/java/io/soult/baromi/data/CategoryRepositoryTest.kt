@@ -157,4 +157,18 @@ class CategoryRepositoryTest {
         assertTrue(repo.removeUnlessLast(custom))
         assertFalse(repo.all().any { it.name == "Only" })
     }
+
+    @Test
+    fun add_enforces_the_name_length_limit() = runTest {
+        assertEquals(CategoryRepository.AddResult.INVALID, repo.add("x".repeat(Category.MAX_NAME_LENGTH + 1)))
+        assertEquals(CategoryRepository.AddResult.ADDED, repo.add("y".repeat(Category.MAX_NAME_LENGTH)))
+    }
+
+    @Test
+    fun normalize_name_never_splits_an_emoji() {
+        val name = "a".repeat(Category.MAX_NAME_LENGTH - 1) + "\uD83D\uDE00" // emoji straddles the limit
+        val normalized = Category.normalizeName(name)
+        assertEquals("a".repeat(Category.MAX_NAME_LENGTH - 1), normalized)
+        assertFalse(normalized.any { Character.isSurrogate(it) })
+    }
 }

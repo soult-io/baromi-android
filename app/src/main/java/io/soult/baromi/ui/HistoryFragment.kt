@@ -1,6 +1,7 @@
 package io.soult.baromi.ui
 
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -153,6 +154,8 @@ class HistoryFragment : Fragment() {
         for (category in enabledCategories) {
             val chip = Chip(requireContext()).apply {
                 text = category.name
+                maxWidth = dp(CHIP_MAX_WIDTH_DP)
+                ellipsize = TextUtils.TruncateAt.END
                 isCheckable = true
                 id = View.generateViewId()
                 tag = category.id
@@ -265,10 +268,14 @@ class HistoryFragment : Fragment() {
         binding = null
     }
 
-    private companion object {
+    internal companion object {
+        /** Widest a Calendar category chip may grow; a longer name ends in "…". */
+        @VisibleForTesting
+        const val CHIP_MAX_WIDTH_DP = 200
+
         // Fewer distinct check-in days than this and the trend charts show guidance instead.
-        const val MIN_CHART_DAYS = 3
-        val MONTH_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())
-        val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
+        private const val MIN_CHART_DAYS = 3
+        private val MONTH_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())
+        private val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
     }
 }

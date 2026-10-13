@@ -1,6 +1,7 @@
 package io.soult.baromi.ui
 
 import android.os.Bundle
+import android.text.InputFilter
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -70,6 +71,8 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // The category-name limit lives in Category; the tag input keeps its own XML maxLength.
+        binding.inputNewCategory.filters = arrayOf(InputFilter.LengthFilter(Category.MAX_NAME_LENGTH))
         title = getString(R.string.settings_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 

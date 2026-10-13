@@ -28,6 +28,19 @@ data class Category(
     companion object {
         const val MAX_CUSTOM = 3
 
+        /** Longest category name, in characters. Settings applies it as the input's length filter. */
+        const val MAX_NAME_LENGTH = 40
+
+        /**
+         * Trims and shortens [name] to [MAX_NAME_LENGTH]; used where names arrive from outside (backups).
+         * Never cuts a surrogate pair (emoji) in half, matching the Settings input's length filter.
+         */
+        fun normalizeName(name: String): String {
+            var cut = name.trim().take(MAX_NAME_LENGTH)
+            if (cut.isNotEmpty() && Character.isHighSurrogate(cut.last())) cut = cut.dropLast(1)
+            return cut.trim()
+        }
+
         val BUILTINS = listOf(
             Category(key = "mood", name = "Mood", builtin = true, position = 0),
             Category(key = "energy", name = "Energy", builtin = true, position = 1),

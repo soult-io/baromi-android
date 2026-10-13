@@ -125,4 +125,39 @@ class BackupManagerTest {
         val values = target.checkinDao().getAllWithDetails().single { it.checkin.answeredTime == 5000L }.values
         assertEquals(custom.id, values.single().categoryId)
     }
+
+    @Test
+    fun reimport_does_not_duplicate_a_stored_name_longer_than_the_limit() = runTest {
+        val target = newDb()
+        val longName = "m".repeat(Category.MAX_NAME_LENGTH + 5) // stored by an import from before the limit
+        target.categoryDao().insert(Category(key = null, name = longName, builtin = false, position = 5))
+        val data = BackupData(
+            scaleVersion = 2,
+            exportedAt = 0L,
+            categories = listOf(BackupCategory(id = 7, key = null, name = longName, builtin = false, enabled = true, position = 5)),
+            tags = emptyList(),
+            reminderTimes = emptyList(),
+            checkins = emptyList(),
+        )
+        BackupManager(target).import(data)
+        assertEquals(1, target.categoryDao().getAll().count { !it.builtin })
+    }
+
+    @Test
+    fun builtin_with_a_blank_name_in_the_backup_still_matches_by_key() = runTest {
+        val target = newDb()
+        target.categoryDao().insert(Category(key = "mood", name = "Mood", builtin = true, position = 0))
+        val data = BackupData(
+            scaleVersion = 2,
+            exportedAt = 0L,
+            categories = listOf(BackupCategory(id = 1, key = "mood", name = "  ", builtin = true, enabled = true, position = 0)),
+            tags = emptyList(),
+            reminderTimes = emptyList(),
+            checkins = listOf(BackupCheckin(promptTime = null, answeredTime = 7000L, comment = null, locked = false, values = listOf(BackupValue(1, 4)), tagIds = emptyList())),
+        )
+        BackupManager(target).import(data)
+        val mood = target.categoryDao().getAll().single { it.key == "mood" }
+        val values = target.checkinDao().getAllWithDetails().single { it.checkin.answeredTime == 7000L }.values
+        assertEquals(mood.id, values.single().categoryId)
+    }
 }

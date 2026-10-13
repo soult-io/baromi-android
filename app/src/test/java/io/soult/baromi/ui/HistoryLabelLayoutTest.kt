@@ -83,7 +83,11 @@ class HistoryLabelLayoutTest {
 
     @Test
     fun builtin_names_render_in_full_at_200_percent_font() {
-        labels(2.0f, builtins).forEach(::assertFullyShown)
+        val large = labels(2.0f, builtins)
+        // Guard against a vacuous pass: the larger font must actually apply.
+        val ratio = large.first().textSize / labels(1.0f, builtins).first().textSize
+        assertTrue("font scale not applied (ratio $ratio)", ratio in 1.9f..2.1f)
+        large.forEach(::assertFullyShown)
     }
 
     @Test

@@ -67,11 +67,13 @@ class HistoryLabelLayoutTest {
     private fun TextView.ellipsized(): Boolean =
         (0 until layout.lineCount).any { layout.getEllipsisCount(it) > 0 }
 
+    /** A one-word name must sit on a single line, unbroken and not ellipsized ("Energ" + "y" fails). */
     private fun assertFullyShown(label: TextView) {
         assertTrue("'${label.text}' is ellipsized", !label.ellipsized())
+        assertEquals("'${label.text}' wraps mid-word", 1, label.layout.lineCount)
         val needed = label.paint.measureText(label.text.toString())
         val available = label.width - label.totalPaddingLeft - label.totalPaddingRight
-        assertTrue("'${label.text}' needs ${needed}px but has ${available}px", label.layout.lineCount > 1 || needed <= available)
+        assertTrue("'${label.text}' needs ${needed}px but has ${available}px", needed <= available)
     }
 
     @Test

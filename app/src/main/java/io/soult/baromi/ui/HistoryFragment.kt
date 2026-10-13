@@ -14,6 +14,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.room.withTransaction
 import com.google.android.material.chip.Chip
 import io.soult.baromi.R
 import io.soult.baromi.data.BaromiDatabase
@@ -22,6 +23,7 @@ import io.soult.baromi.data.CheckinEditPolicy
 import io.soult.baromi.data.CheckinWithDetails
 import io.soult.baromi.databinding.FragmentHistoryBinding
 import io.soult.baromi.stats.HistoryStats
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -34,8 +36,8 @@ import java.util.Locale
  * The History tab. A segmented control switches between three views over the same loaded data:
  * the chronological List (unchanged), a Calendar heatmap (a month tinted by a chosen category's
  * daily average, tap a day for its entries), and Charts (per-category daily-average bars plus tag
- * frequency, over a selectable window). All aggregation lives in [HistoryStats]; this fragment only
- * loads once and renders.
+ * frequency, over a selectable window). All aggregation lives in [HistoryStats]; this fragment
+ * loads on every start and renders.
  */
 class HistoryFragment : Fragment() {
 
@@ -45,7 +47,8 @@ class HistoryFragment : Fragment() {
     private val dayDetailAdapter = CheckinAdapter()
 
     private val zone: ZoneId = ZoneId.systemDefault()
-    private val today: LocalDate = LocalDate.now(zone)
+    // Re-read on every load: a reload can happen after midnight on a long-lived fragment.
+    private var today: LocalDate = LocalDate.now(zone)
 
     private var items: List<CheckinWithDetails> = emptyList()
     private var categories: List<Category> = emptyList()
@@ -55,10 +58,16 @@ class HistoryFragment : Fragment() {
     private var currentMonth: YearMonth = YearMonth.from(today)
     private var calendarCategoryId: Long = -1L
     private var window: HistoryStats.Window = HistoryStats.Window.MONTH
+    private var selectedDay: LocalDate? = null
+    private var loadJob: Job? = null
 
-    // Tests drive rendering directly via renderForTest and turn off the async DB load.
-    @VisibleForTesting
-    var autoLoad = true
+    /** Where History reads its data; tests swap in fixtures. */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    var loader: suspend () -> Pair<List<CheckinWithDetails>, List<Category>> = {
+        val db = BaromiDatabase.getInstance(requireContext().applicationContext)
+        // One snapshot: a write between the two reads (e.g. a backup import) must not mix states.
+        db.withTransaction { db.checkinDao().getAllWithDetails() to db.categoryDao().getAll() }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val b = FragmentHistoryBinding.inflate(inflater, container, false)
@@ -94,12 +103,18 @@ class HistoryFragment : Fragment() {
 
         b.modeToggle.check(R.id.btnList)
         b.windowToggle.check(R.id.btnMonth)
+    }
 
-        if (autoLoad) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                val db = BaromiDatabase.getInstance(requireContext().applicationContext)
-                applyData(db.checkinDao().getAllWithDetails(), db.categoryDao().getAll())
-            }
+    // Load every time History becomes visible, not only when its view is created: Settings is a
+    // separate activity, so coming back from it (category deleted or disabled, backup imported)
+    // restarts this fragment without recreating its view.
+    override fun onStart() {
+        super.onStart()
+        // Only the newest load may render: a quick stop/start must not let an older one win.
+        loadJob?.cancel()
+        loadJob = viewLifecycleOwner.lifecycleScope.launch {
+            val (rows, cats) = loader()
+            applyData(rows, cats)
         }
     }
 
@@ -109,15 +124,23 @@ class HistoryFragment : Fragment() {
         this.categories = categories
         this.enabledCategories = categories.filter { it.enabled }
         this.loaded = true
-        this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
+        this.today = LocalDate.now(zone)
+        // Keep the user's calendar category across a reload while it is still enabled.
+        val categoryKept = enabledCategories.any { it.id == calendarCategoryId }
+        if (!categoryKept) {
+            this.calendarCategoryId = enabledCategories.firstOrNull()?.id ?: -1L
+        }
         renderList()
         buildCategoryChips()
         renderCalendar()
         renderCharts()
+        // An open day panel shows the new data, or closes if its category went away.
+        val day = selectedDay
+        if (day != null && categoryKept) showDayDetail(day) else clearDayDetail()
     }
 
     /** Test seam: render from supplied fixtures without the DB/coroutine. */
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun renderForTest(items: List<CheckinWithDetails>, categories: List<Category>) =
         applyData(items, categories)
 
@@ -191,6 +214,7 @@ class HistoryFragment : Fragment() {
 
     private fun showDayDetail(date: LocalDate) {
         val b = binding ?: return
+        selectedDay = date
         val dayItems = items.filter {
             Instant.ofEpochMilli(it.checkin.answeredTime).atZone(zone).toLocalDate() == date
         }
@@ -201,6 +225,7 @@ class HistoryFragment : Fragment() {
 
     private fun clearDayDetail() {
         val b = binding ?: return
+        selectedDay = null
         b.dayDetailLabel.isVisible = false
         dayDetailAdapter.submit(emptyList(), categories)
     }
